@@ -14,9 +14,10 @@ const styles = StyleSheet.create({
     borderColor: '#DDDDDD', // light gray from your mock
     borderStyle: 'dashed',
     borderRadius: 16, // rounded corners
-    paddingVertical: 32,
+    paddingVertical: 24,
     paddingHorizontal: 16,
-    margin: 16,
+    marginHorizontal: 16,
+    marginVertical: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },

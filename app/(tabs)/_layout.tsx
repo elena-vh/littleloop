@@ -65,10 +65,10 @@ export default function TabsLayout() {
             elevation: 12,
             height: 80,
             paddingTop: 6,
-            borderRadius: 80,
-            marginBottom: 16,
-            marginLeft: 16,
-            marginRight: 16,
+            // borderRadius: 80,
+            // marginBottom: 16,
+            // marginLeft: 16,
+            // marginRight: 16,
           },
           // tabBarBackground: () => (
           //   <BlurView

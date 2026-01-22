@@ -8,12 +8,13 @@ export type Task = {
   done: boolean;
   dueDate?: string; // "YYYY-MM-DD" optional
   projectId?: string; // link to a project if needed
-  createdAt: number;
+  createdAt?: number;
 };
 
 type State = {
   tasks: Task[];
   add: (text: string, dueDate?: string, projectId?: string) => void;
+  update: (id: string, patch) => void;
   toggle: (id: string) => void;
   remove: (id: string) => void;
   clearDone: () => void;
@@ -36,6 +37,10 @@ export const useTasks = create<State>()(
               createdAt: Date.now(),
             },
           ],
+        }),
+      update: (id, patch) =>
+        set({
+          tasks: get().tasks.map((t) => (t.id === id ? { ...t, ...patch } : t)),
         }),
       toggle: (id) =>
         set({

@@ -6,25 +6,44 @@ import {
   StyleSheet,
   Modal,
   TouchableOpacity,
+  FlatList,
 } from 'react-native';
 import { Card } from '../ui/Card';
 import { Body } from '../ui/Text';
-import { useTasks } from '@src/store/tasks';
+import { Task, useTasks } from '@src/store/tasks';
 import AddTaskIcon from '@assets/icons/plus.svg';
+import TrashIcon from '@assets/icons/trash.svg';
 import EmptyStateCard from '../ui/EmptyStateCard';
 import AddTaskModal from './AddTaskModal';
+import AddTaskInput from './AddTaskInput';
+import { spacing } from '@src/theme/tokens';
+
 const Tasks = () => {
   const { tasks, toggle, remove } = useTasks();
   const today = new Date().toISOString().slice(0, 10);
   const todays = tasks.filter((t) => t.dueDate === today && !t.done);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isTaskInputVisible, setIsTaskInputVisible] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [text, setText] = useState('');
+  console.log({ text });
+  const openAdd = () => {
+    setSelectedTask(null);
+    setText(''); // ✅ reset draft
+    setIsTaskInputVisible(true);
+  };
+  const openEdit = (task: Task) => {
+    setSelectedTask(task);
+    setText(task.text); // ✅ load draft from saved task
+    setIsModalVisible(true);
+  };
 
   return (
-    <View>
+    <View style={styles.wrapper}>
       <View style={styles.header}>
         <Body style={styles.title}>Tasks</Body>
         <Pressable
-          onPress={() => setIsModalVisible(true)}
+          onPress={openAdd}
           accessibilityLabel='Add task'
           style={styles.plusButton}>
           <AddTaskIcon />
@@ -34,34 +53,62 @@ const Tasks = () => {
         {tasks.length === 0 ? (
           <EmptyStateCard message='No tasks yet - just cozy vibes.' />
         ) : (
-          tasks.map((t) => (
-            <Pressable
-              key={t.id}
-              onPress={() => toggle(t.id)}
-              onLongPress={() => remove(t.id)}>
-              <Text
+          <FlatList
+            data={tasks}
+            keyExtractor={(item) => item.id}
+            scrollEnabled={false}
+            renderItem={({ item }) => (
+              <Pressable
+                onPress={() => openEdit(item)}
                 style={{
-                  textDecorationLine: t.done ? 'line-through' : 'none',
+                  backgroundColor: '#fff',
+                  padding: spacing.xl,
+                  borderRadius: 12,
+                  marginHorizontal: spacing.md,
+                  marginTop: spacing.sm,
                 }}>
-                {t.text}
-              </Text>
-            </Pressable>
-          ))
+                <Text
+                  style={{
+                    fontFamily: 'Quicksand_500Medium',
+                  }}>
+                  {item.text}
+                </Text>
+              </Pressable>
+            )}
+          />
         )}
       </View>
       <AddTaskModal
+        onDelete={() => remove(selectedTask?.id)}
         visible={isModalVisible}
         onClose={() => setIsModalVisible(false)}
+        defaultText={selectedTask?.text ?? ''}
+        setText={setText}
+        text={text}
+        selectedTask={selectedTask}
+      />
+      <AddTaskInput
+        openModal={() => setIsModalVisible(true)}
+        visible={isTaskInputVisible}
+        onClose={() => setIsTaskInputVisible(false)}
+        defaultText={selectedTask?.text}
+        setText={setText}
+        text={text}
       />
     </View>
   );
 };
 const styles = StyleSheet.create({
+  wrapper: {
+    width: '100%',
+    display: 'flex',
+  },
   header: {
     display: 'flex',
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
+    marginTop: 16,
   },
   title: {
     fontFamily: 'Lexend_600SemiBold',
@@ -72,8 +119,6 @@ const styles = StyleSheet.create({
     height: 38,
     borderRadius: 10,
     backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });
 export default Tasks;

@@ -13,134 +13,225 @@ import {
   Platform,
   AccessibilityInfo,
 } from 'react-native';
+import { Animated, PanResponder } from 'react-native';
+
 import KittyButton from '@assets/icons/kitty_button.svg';
+import DisabledSave from '@assets/icons/disabled_save_big.svg';
+import Close from '@assets/icons/close.svg';
+import Save from '@assets/icons/save_big.svg';
+
 import Quotes from '@assets/icons/quotes.svg';
 import { useTasks } from '@src/store/tasks';
-import { spacing } from '@src/theme/tokens';
+import { radius, spacing } from '@src/theme/tokens';
+import DeleteTask from '@assets/icons/delete_task.svg';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
+import { Card } from '../ui/Card';
+import Select, { Option } from '../ui/Select';
 
 type Props = {
   visible: boolean;
   onClose: () => void;
+  onDelete: () => void;
   defaultText?: string;
   projectId?: string;
+  setText;
+  selectedTask;
+  text;
 };
+type projects = {
+  label: string;
+};
+// export type Option<T extends string> = { label: string; value: T };
 
 export default function AddTaskModal({
   visible,
   onClose,
   defaultText = '',
   projectId,
+  onDelete,
+  setText,
+  text,
+  selectedTask = {},
 }: Props) {
+  const insets = useSafeAreaInsets(); // { top, bottom, left, right }
+  const update = useTasks((s) => s.update);
   const add = useTasks((s) => s.add);
-  const [text, setText] = useState(defaultText);
+  const remove = useTasks((s) => s.remove);
+  const { tasks } = useTasks();
+  const projects = [{ label: 'Baby hat', value: 'baby hat' }];
+  // const lastTask = tasks.at(-1) ?? null;
+  console.log({ tasks });
+  // const [text, setText] = useState(defaultText);
   const [isScreenReaderOn, setIsScreenReaderOn] = useState(false);
+  // const panResponder = PanResponder.create({
+  //   onStartShouldSetPanResponder: () => true,
+  //   onPanResponderMove: Animated.event([null, { dy: 0 }], {
+  //     useNativeDriver: false,
+  //   }),
+  //   onPanResponderRelease: (e, gestureState) => {
+  //     if (gestureState.dy > 50) {
+  //       Animated.timing(0,{toValue:0});
+  //     } else {
+  //       Animated.spring(0, {
+  //         toValue: 0,
+  //         tension: 1,
+  //         friction: 20,
+  //         useNativeDriver: true,
+  //       }).start();
+  //     }
+  //   },
+  // });
+  // useEffect(() => {
+  //   AccessibilityInfo.isScreenReaderEnabled().then(setIsScreenReaderOn);
+  // }, []);
 
-  useEffect(() => {
-    AccessibilityInfo.isScreenReaderEnabled().then(setIsScreenReaderOn);
-  }, []);
-
-  useEffect(() => {
-    if (visible) {
-      setText(defaultText);
-    }
-  }, [visible, defaultText]);
-
-  const save = () => {
+  const createTask = () => {
     if (!text.trim()) {
-      // simple guard — you can enhance with error UI
       return;
     }
     add(text.trim(), undefined, projectId);
     onClose();
   };
+  const editTask = () => {
+    if (!text.trim()) {
+      return;
+    }
+    const value = text.trim();
 
+    update(selectedTask?.id, { text: value });
+    onClose();
+  };
+  const deleteTask = () => {
+    remove(selectedTask?.id);
+    onClose();
+  };
   return (
-    <Modal
-      visible={visible}
-      animationType='slide'
-      transparent
-      statusBarTranslucent
-      onRequestClose={onClose}
-      accessible
-      accessibilityViewIsModal>
-      {/* backdrop */}
-      <TouchableWithoutFeedback onPress={onClose} accessible={false}>
-        <View style={styles.backdrop} />
-      </TouchableWithoutFeedback>
+    <Animated.View
+      // {...panResponder.panHandlers}
+      style={[styles.container, { transform: [{ translateY: 0 }], bottom: 0 }]}>
+      <Modal
+        presentationStyle='pageSheet'
+        visible={visible}
+        animationType='slide'
+        transparent
+        statusBarTranslucent
+        onRequestClose={onClose}
+        accessible
+        accessibilityViewIsModal
+        style={{ height: '100%' }}>
+        <View
+          style={{
+            flex: 1,
+          }}>
+          <TouchableWithoutFeedback onPress={onClose} accessible={false}>
+            <View style={styles.backdrop} />
+          </TouchableWithoutFeedback>
 
-      {/* modal content */}
-      <KeyboardAvoidingView
-        behavior={Platform.select({ ios: 'padding', android: undefined })}
-        style={styles.avoider}>
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-          <View style={styles.container} accessibilityLiveRegion='polite'>
-            <View style={styles.headerRow}>
-              {/* <Text style={styles.title}>Add task</Text> */}
+          <KeyboardAvoidingView
+            behavior={Platform.select({ ios: 'padding', android: undefined })}
+            style={styles.avoider}>
+            <TouchableWithoutFeedback
+              onPress={Keyboard.dismiss}
+              accessible={false}>
+              <View style={styles.container} accessibilityLiveRegion='polite'>
+                <View style={styles.headerRow}>
+                  <Pressable onPress={onClose} accessibilityLabel='Close'>
+                    <Close />
+                  </Pressable>
 
-              <Pressable
-                onPress={onClose}
-                accessibilityLabel='Close'
-                style={styles.closeButton}>
-                <Text style={styles.closeX}>✕</Text>
-              </Pressable>
-            </View>
-            <View>
-              <TextInput
-                multiline
-                style={styles.input}
-                placeholder='Start typing your ideas'
-                placeholderTextColor='#9CA3AF'
-                value={text}
-                onChangeText={setText}
-                autoFocus={!isScreenReaderOn} // avoid autoFocus if SR is active
-                returnKeyType='done'
-                onSubmitEditing={save}
-                accessibilityLabel='Task description'
-              />
-              <Quotes style={styles.quotes} />
-            </View>
-            <View style={styles.actionsRow}>
-              {/* <Pressable
-                onPress={onClose}
-                style={[styles.button, styles.ghost]}>
-                <Text style={[styles.buttonLabel, styles.ghostLabel]}>
-                  Cancel
-                </Text>
-              </Pressable> */}
-              <KittyButton style={styles.kittyButton} width={60} />
-              <Pressable onPress={save} style={[styles.button, styles.primary]}>
-                <Text style={[styles.buttonLabel, styles.primaryLabel]}>
-                  Save
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
-    </Modal>
+                  {text.trim().length > 0 ? (
+                    <Save
+                      style={styles.saveButton}
+                      onPress={selectedTask?.id ? editTask : createTask}
+                    />
+                  ) : (
+                    <DisabledSave style={styles.saveButton} />
+                  )}
+                </View>
+                <View>
+                  <TextInput
+                    multiline
+                    style={styles.input}
+                    placeholder='Start typing your ideas'
+                    placeholderTextColor='#9CA3AF'
+                    value={text}
+                    onChangeText={setText}
+                    autoFocus={!isScreenReaderOn}
+                    returnKeyType='done'
+                    onSubmitEditing={selectedTask?.id ? editTask : createTask}
+                    accessibilityLabel='Task description'
+                  />
+                </View>
+                <View>
+                  <Card
+                    style={{
+                      gap: 16,
+                      display: 'flex',
+                      position: 'relative',
+                      padding: 10,
+                    }}>
+                    <View>
+                      <Select
+                        label='Assign to project'
+                        options={projects}
+                        value='baby hat'
+                        onChange={() => {}}
+                      />
+                    </View>
+                    <View
+                      style={{ borderColor: '#F6F5F3', borderBottomWidth: 1 }}
+                    />
+                    <Select
+                      label='Importance'
+                      options={[{ label: 'Baby hat', value: 'baby hat' }]}
+                      value='aaa'
+                      onChange={() => {}}
+                    />
+                  </Card>
+                </View>
+                <View style={styles.actionsRow}>
+                  <Pressable onPress={onDelete}>
+                    <DeleteTask
+                      style={styles.deleteButton}
+                      onPress={deleteTask}
+                    />
+                  </Pressable>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: '#F6F5F3',
+    height: '100%',
   },
   quotes: {
     position: 'absolute',
     top: 25,
-    left: 10,
+    left: 30,
   },
   avoider: {
     flex: 1,
     justifyContent: 'flex-end', // slide up from bottom
   },
+  saveButton: { position: 'absolute', top: 0, right: 0 },
+  deleteButton: { top: 20, marginBottom: 20, marginHorizontal: spacing.lg },
   container: {
-    backgroundColor: '#fff',
+    flex: 1,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    paddingHorizontal: spacing.lg,
     paddingTop: spacing['2xl'],
+    marginTop: 40,
     paddingBottom: spacing['2xl'],
     // subtle shadow on top
     shadowColor: '#000',
@@ -154,27 +245,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: spacing.sm,
+    marginHorizontal: spacing.lg,
   },
   title: {
     fontFamily: 'Fraunces_600SemiBold',
     fontSize: 18,
   },
-  closeButton: {
-    padding: 8,
-  },
+  label: { fontFamily: 'Quicksand_500Medium', fontSize: 16 },
+
   closeX: {
     fontSize: 18,
     color: '#6B7280',
   },
   input: {
     position: 'relative',
-    height: 150,
+    height: 120,
+    marginHorizontal: spacing.lg,
+    top: 0,
     textAlignVertical: 'top',
-    borderRadius: 12,
-    backgroundColor: '#F3F4F6',
+    borderRadius: radius.lg,
+    backgroundColor: 'white',
     paddingHorizontal: 12,
     paddingVertical: 14,
-    paddingTop: 60,
+    paddingTop: 20,
     paddingLeft: 20,
     fontFamily: 'Fraunces_300Light',
     fontSize: 20,
