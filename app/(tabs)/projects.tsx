@@ -9,14 +9,13 @@ import {
   Image,
   ScrollView,
 } from 'react-native';
-import { Search, SlidersHorizontal, Plus, Heart } from 'lucide-react-native';
+import { Search, SlidersHorizontal, Plus } from 'lucide-react-native';
 import { useFocusEffect, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { color, font, radius } from '@src/theme/theme';
 import { listProjects, type Project } from '@src/db/projectsRepo';
 import { useProgress, projectPercent } from '@src/store/progress';
-import StitchTexture from '@src/components/ui/StitchTexture';
 import Tag from '@src/components/ui/Tag';
 import CraftPickerModal from '@src/components/home/CraftPickerModal';
 
@@ -29,10 +28,10 @@ const FILTERS: { key: Filter; label: string }[] = [
 ];
 
 const TINTS: [string, string][] = [
-  [color.neutral[800], color.neutral[200]],
-  [color.acc[300], color.acc[100]],
-  [color.acc2[400], color.acc2[100]],
-  [color.acc[200], color.neutral[100]],
+  [color.acc2[300], color.acc2[800]],
+  [color.acc[200], color.acc[800]],
+  [color.neutral[300], color.neutral[700]],
+  [color.acc2[200], color.acc2[700]],
 ];
 
 function ProjectCard({
@@ -47,7 +46,7 @@ function ProjectCard({
   const counters = useProgress((s) => s.counters);
   const pct = Math.round(projectPercent(counters, project.id) * 100);
   const photo = project.photos?.[0]?.uri;
-  const [from, to] = TINTS[index % TINTS.length];
+  const [block, ink] = TINTS[index % TINTS.length];
   const tags = [project.craft, ...(project.tags ?? [])].filter(Boolean).slice(0, 2);
 
   return (
@@ -56,11 +55,12 @@ function ProjectCard({
         {photo ? (
           <Image source={{ uri: photo }} style={styles.photo} />
         ) : (
-          <StitchTexture from={from} to={to} band={9} style={StyleSheet.absoluteFill} />
+          <View style={[StyleSheet.absoluteFill, styles.block, { backgroundColor: block }]}>
+            <Text style={[styles.monogram, { color: ink }]}>
+              {project.name.trim().charAt(0).toUpperCase() || '·'}
+            </Text>
+          </View>
         )}
-        <View style={styles.heart}>
-          <Heart size={17} strokeWidth={2.75} color={color.neutral[500]} />
-        </View>
         <View style={styles.badge}>
           <Text style={styles.badgeText}>{pct}%</Text>
         </View>
@@ -183,14 +183,8 @@ export default function ProjectsScreen() {
         )}
         ListEmptyComponent={
           <Pressable style={styles.empty} onPress={() => setPickerOpen(true)}>
-            <StitchTexture
-              from={color.acc2[300]}
-              to={color.acc2[100]}
-              band={9}
-              style={styles.emptyThumb}
-            />
-            <Text style={styles.emptyTitle}>No projects yet</Text>
-            <Text style={styles.emptySub}>Cast on your first project</Text>
+            <Text style={styles.emptyTitle}>Nothing on the needles</Text>
+            <Text style={styles.emptySub}>Tap to cast on your first project</Text>
           </Pressable>
         }
       />
@@ -263,7 +257,7 @@ const styles = StyleSheet.create({
   card: { flex: 1 },
   thumb: {
     height: 150,
-    borderRadius: 26,
+    borderRadius: radius.photo,
     overflow: 'hidden',
     backgroundColor: color.neutral[200],
   },
@@ -271,25 +265,20 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     resizeMode: 'cover',
   },
-  heart: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 34,
-    height: 34,
-    borderRadius: radius.pill,
-    backgroundColor: 'rgba(245,234,216,0.9)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  block: { alignItems: 'center', justifyContent: 'center' },
+  monogram: {
+    fontFamily: font.headingBlack,
+    fontSize: 64,
+    opacity: 0.6,
   },
   badge: {
     position: 'absolute',
-    left: 10,
-    bottom: 10,
-    paddingHorizontal: 11,
-    paddingVertical: 4,
-    borderRadius: radius.pill,
-    backgroundColor: color.acc2[700],
+    left: 8,
+    bottom: 8,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: radius.sm,
+    backgroundColor: color.acc2[800],
   },
   badgeText: {
     fontFamily: font.bodySemi,
@@ -306,22 +295,15 @@ const styles = StyleSheet.create({
   },
   tags: { flexDirection: 'row', gap: 5, flexWrap: 'wrap' },
   empty: {
-    marginTop: 40,
+    marginTop: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 44,
-    borderRadius: 26,
-    overflow: 'hidden',
+    gap: 6,
   },
-  emptyThumb: { ...StyleSheet.absoluteFill },
   emptyTitle: {
     fontFamily: font.heading,
-    fontSize: 18,
+    fontSize: 20,
     color: color.text,
-    backgroundColor: color.bg,
-    paddingHorizontal: 12,
-    borderRadius: radius.sm,
-    overflow: 'hidden',
   },
   emptySub: {
     fontFamily: font.body,

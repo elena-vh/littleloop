@@ -180,8 +180,7 @@ const styles = StyleSheet.create({
   subKicker: {
     fontFamily: font.bodySemi,
     fontSize: 11,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
+    letterSpacing: 0.3,
     color: color.acc[700],
     marginBottom: 4,
   },

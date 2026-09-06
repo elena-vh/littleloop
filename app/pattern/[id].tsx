@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 18,
   },
-  rowCurrent: { backgroundColor: color.acc[100], borderRadius: 22 },
+  rowCurrent: { backgroundColor: color.acc[100], borderRadius: 14 },
   rowNum: {
     width: 38,
     fontFamily: font.body,
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
 
   notes: {
     backgroundColor: color.acc2[200],
-    borderRadius: 24,
+    borderRadius: 14,
     paddingVertical: 16,
     paddingHorizontal: 18,
     marginTop: 20,
@@ -241,8 +241,7 @@ const styles = StyleSheet.create({
   notesKicker: {
     fontFamily: font.bodySemi,
     fontSize: 10,
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
+    letterSpacing: 0.3,
     color: color.acc2[800],
     marginBottom: 6,
   },

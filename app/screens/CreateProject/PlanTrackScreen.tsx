@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
   datePill: {
     flex: 1,
     backgroundColor: color.surface,
-    borderRadius: 24,
+    borderRadius: 14,
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderWidth: 2,
@@ -315,8 +315,7 @@ const styles = StyleSheet.create({
   dateLabel: {
     fontFamily: font.bodySemi,
     fontSize: 11,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
+    letterSpacing: 0.3,
     color: color.acc[700],
     marginBottom: 5,
   },
@@ -329,7 +328,7 @@ const styles = StyleSheet.create({
 
   calendar: {
     backgroundColor: color.surface,
-    borderRadius: 28,
+    borderRadius: 18,
     padding: 18,
     marginBottom: 14,
   },
@@ -355,7 +354,6 @@ const styles = StyleSheet.create({
     fontFamily: font.bodySemi,
     fontSize: 10,
     letterSpacing: 0.6,
-    textTransform: 'uppercase',
     color: color.neutral[600],
   },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
@@ -382,8 +380,7 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontFamily: font.bodySemi,
     fontSize: 11,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
+    letterSpacing: 0.3,
     color: color.acc[700],
     marginBottom: 10,
   },
@@ -396,7 +393,7 @@ const styles = StyleSheet.create({
 
   photoSlot: {
     height: 88,
-    borderRadius: 20,
+    borderRadius: 14,
     borderWidth: 2,
     borderStyle: 'dashed',
     borderColor: color.neutral[400],

@@ -22,7 +22,7 @@ export default function WizardHeader({
           />
         ))}
       </View>
-      <Text style={styles.kicker}>Step {step} of 3 · new project</Text>
+      <Text style={styles.kicker}>Step {step} of 3</Text>
       <Text style={styles.title}>{title}</Text>
     </View>
   );
@@ -34,8 +34,7 @@ const styles = StyleSheet.create({
   kicker: {
     fontFamily: font.bodySemi,
     fontSize: 10.5,
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
+    letterSpacing: 0.3,
     color: color.acc[700],
     marginBottom: 6,
   },

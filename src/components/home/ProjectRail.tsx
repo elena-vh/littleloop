@@ -4,21 +4,22 @@ import {
   Text,
   Pressable,
   ScrollView,
+  Image,
   StyleSheet,
 } from 'react-native';
 import { Plus } from 'lucide-react-native';
 import { color, font, radius } from '@src/theme/theme';
-import StitchTexture from '@src/components/ui/StitchTexture';
 import type { Project } from '@src/db/projectsRepo';
 import { useProgress, projectPercent } from '@src/store/progress';
 
-const CARD_W = 148;
+const CARD_W = 150;
 
+// [block, ink] pairs — flat colour fields, a monogram sits on top.
 const TINTS: [string, string][] = [
-  [color.neutral[800], color.neutral[200]],
-  [color.acc[300], color.acc[100]],
-  [color.acc2[400], color.acc2[100]],
-  [color.acc[200], color.neutral[100]],
+  [color.acc2[300], color.acc2[800]],
+  [color.acc[200], color.acc[800]],
+  [color.neutral[300], color.neutral[700]],
+  [color.acc2[200], color.acc2[700]],
 ];
 
 function ProjectCard({
@@ -32,11 +33,20 @@ function ProjectCard({
 }) {
   const counters = useProgress((s) => s.counters);
   const pct = projectPercent(counters, project.id);
-  const [from, to] = TINTS[index % TINTS.length];
+  const [block, ink] = TINTS[index % TINTS.length];
+  const photo = project.photos?.[0]?.uri;
 
   return (
     <Pressable style={styles.card} onPress={onPress}>
-      <StitchTexture from={from} to={to} band={9} style={styles.thumb} />
+      {photo ? (
+        <Image source={{ uri: photo }} style={styles.thumb} />
+      ) : (
+        <View style={[styles.thumb, { backgroundColor: block }]}>
+          <Text style={[styles.monogram, { color: ink }]}>
+            {project.name.trim().charAt(0).toUpperCase() || '·'}
+          </Text>
+        </View>
+      )}
       <Text style={styles.name} numberOfLines={1}>
         {project.name}
       </Text>
@@ -65,18 +75,13 @@ export default function ProjectRail({
           style={styles.addBtn}
           accessibilityRole='button'
           accessibilityLabel='Add project'>
-          <Plus size={20} strokeWidth={2.75} color={color.acc[800]} />
+          <Plus size={19} strokeWidth={2.75} color={color.acc[800]} />
         </Pressable>
       </View>
 
       {projects.length === 0 ? (
         <Pressable style={styles.empty} onPress={onAdd}>
-          <StitchTexture
-            from={color.acc2[300]}
-            to={color.acc2[100]}
-            band={9}
-            style={styles.emptyThumb}
-          />
+          <Text style={styles.emptyMonogram}>+</Text>
           <Text style={styles.emptyText}>Cast on your first project</Text>
         </Pressable>
       ) : (
@@ -103,62 +108,67 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 14,
   },
-  heading: {
-    fontFamily: font.heading,
-    fontSize: 19,
-    color: color.text,
-  },
+  heading: { fontFamily: font.heading, fontSize: 17, color: color.text },
   addBtn: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     borderRadius: radius.pill,
-    backgroundColor: color.acc[100],
+    borderWidth: 1.5,
+    borderColor: color.divider,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  rail: { gap: 12, paddingRight: 4 },
+  rail: { gap: 14, paddingRight: 4 },
   card: { width: CARD_W },
   thumb: {
-    height: 112,
-    borderRadius: 24,
-    backgroundColor: color.neutral[200],
+    height: 116,
+    borderRadius: radius.photo,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  monogram: {
+    fontFamily: font.headingBlack,
+    fontSize: 52,
+    opacity: 0.65,
   },
   name: {
     fontFamily: font.heading,
     fontSize: 14,
     color: color.text,
-    marginTop: 9,
-    marginBottom: 6,
+    marginTop: 10,
+    marginBottom: 7,
   },
   track: {
-    height: 6,
+    height: 4,
     borderRadius: radius.pill,
     backgroundColor: color.neutral[300],
     overflow: 'hidden',
   },
   fill: {
-    height: 6,
+    height: 4,
     borderRadius: radius.pill,
     backgroundColor: color.acc2[600],
   },
   empty: {
-    borderRadius: 24,
-    overflow: 'hidden',
-    height: 112,
+    borderRadius: radius.photo,
+    height: 116,
+    borderWidth: 1.5,
+    borderColor: color.divider,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
   },
-  emptyThumb: { ...StyleSheet.absoluteFill, borderRadius: 24 },
+  emptyMonogram: {
+    fontFamily: font.headingBlack,
+    fontSize: 34,
+    color: color.neutral[500],
+  },
   emptyText: {
-    fontFamily: font.bodySemi,
-    fontSize: 13,
-    color: color.acc2[900],
-    backgroundColor: color.bg,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: radius.pill,
-    overflow: 'hidden',
+    fontFamily: font.body,
+    fontSize: 12.5,
+    color: color.neutral[600],
   },
 });

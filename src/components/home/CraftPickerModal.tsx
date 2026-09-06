@@ -37,8 +37,7 @@ export default function CraftPickerModal({
               <X size={18} strokeWidth={2.75} color={color.text} />
             </Pressable>
           </View>
-          <Text style={styles.kicker}>Pick a craft to start</Text>
-          <View style={styles.row}>
+          <View style={[styles.row, { marginTop: 18 }]}>
             <Pressable style={styles.card} onPress={() => go('knitting')}>
               <Text style={styles.cardTitle}>Knitting</Text>
             </Pressable>
@@ -90,8 +89,7 @@ const styles = StyleSheet.create({
   kicker: {
     fontFamily: font.bodySemi,
     fontSize: 10,
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
+    letterSpacing: 0.3,
     color: color.acc[700],
     marginTop: 6,
     marginBottom: 14,

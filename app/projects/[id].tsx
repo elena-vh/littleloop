@@ -21,7 +21,6 @@ import { randomUUID } from 'expo-crypto';
 
 import { color, font, radius, HIT } from '@src/theme/theme';
 import Tag from '@src/components/ui/Tag';
-import StitchTexture from '@src/components/ui/StitchTexture';
 import {
   PhotoRef,
   Project,
@@ -221,12 +220,11 @@ export default function ProjectDetailScreen() {
               style={styles.photo}
             />
           ) : (
-            <StitchTexture
-              from={color.neutral[800]}
-              to={color.neutral[200]}
-              band={11}
-              style={styles.photo}
-            />
+            <View style={[styles.photo, styles.photoEmpty]}>
+              <Text style={styles.photoMonogram}>
+                {project?.name?.trim().charAt(0).toUpperCase() ?? '·'}
+              </Text>
+            </View>
           )}
 
           <View style={styles.sliderWrap}>
@@ -486,8 +484,19 @@ const styles = StyleSheet.create({
   statusText: { fontFamily: font.heading, fontSize: 15, color: color.text },
   photo: {
     height: 176,
-    borderRadius: 24,
+    borderRadius: radius.photo,
     backgroundColor: color.neutral[200],
+  },
+  photoEmpty: {
+    backgroundColor: color.acc2[200],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoMonogram: {
+    fontFamily: font.headingBlack,
+    fontSize: 88,
+    color: color.acc2[700],
+    opacity: 0.5,
   },
   sliderWrap: { marginTop: 18, paddingHorizontal: 4 },
   track: {
@@ -552,15 +561,14 @@ const styles = StyleSheet.create({
   tile: {
     width: '48.5%',
     backgroundColor: color.surface,
-    borderRadius: 22,
+    borderRadius: 14,
     paddingVertical: 14,
     paddingHorizontal: 16,
   },
   kicker: {
     fontFamily: font.bodySemi,
     fontSize: 10,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
+    letterSpacing: 0.3,
     color: color.acc[700],
     marginBottom: 5,
   },
@@ -578,7 +586,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 13,
     backgroundColor: color.surface,
-    borderRadius: 22,
+    borderRadius: 14,
     padding: 15,
   },
   patternIcon: {
@@ -599,7 +607,7 @@ const styles = StyleSheet.create({
 
   timeCard: {
     backgroundColor: color.acc2[200],
-    borderRadius: 28,
+    borderRadius: 18,
     padding: 18,
   },
   timeTopRow: { flexDirection: 'row', alignItems: 'baseline', gap: 9 },
@@ -656,7 +664,7 @@ const styles = StyleSheet.create({
   counterCard: {
     flex: 1,
     backgroundColor: color.surface,
-    borderRadius: 26,
+    borderRadius: 16,
     padding: 16,
   },
   counterCount: {
@@ -677,13 +685,13 @@ const styles = StyleSheet.create({
   picSlot: {
     flex: 1,
     height: 84,
-    borderRadius: 20,
+    borderRadius: 14,
     backgroundColor: color.neutral[200],
   },
   picAdd: {
     flex: 1,
     height: 84,
-    borderRadius: 20,
+    borderRadius: 14,
     borderWidth: 2,
     borderStyle: 'dashed',
     borderColor: color.neutral[400],

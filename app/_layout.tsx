@@ -7,7 +7,11 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { useEffect } from 'react';
 import { useFonts } from 'expo-font';
-import { Caprasimo_400Regular } from '@expo-google-fonts/caprasimo';
+import {
+  Fraunces_400Regular,
+  Fraunces_700Bold,
+  Fraunces_900Black,
+} from '@expo-google-fonts/fraunces';
 import {
   Figtree_400Regular,
   Figtree_600SemiBold,
@@ -28,7 +32,9 @@ export default function RootLayout() {
   }, []);
 
   const [loaded] = useFonts({
-    Caprasimo_400Regular,
+    Fraunces_400Regular,
+    Fraunces_700Bold,
+    Fraunces_900Black,
     Figtree_400Regular,
     Figtree_600SemiBold,
     Figtree_700Bold,

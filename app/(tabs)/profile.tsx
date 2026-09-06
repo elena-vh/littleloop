@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   statRow: { flexDirection: 'row', gap: 10, marginBottom: 26 },
   stat: {
     flex: 1,
-    borderRadius: 24,
+    borderRadius: 14,
     paddingVertical: 14,
     paddingHorizontal: 12,
     alignItems: 'center',
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
   },
   settingsCard: {
     backgroundColor: color.surface,
-    borderRadius: 28,
+    borderRadius: 18,
     overflow: 'hidden',
   },
   setRow: {

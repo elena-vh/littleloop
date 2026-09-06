@@ -335,27 +335,23 @@ const styles = StyleSheet.create({
     color: color.neutral[700],
   },
   tapHint: {
-    marginTop: 8,
-    fontFamily: font.bodySemi,
-    fontSize: 10.5,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    color: color.acc[700],
+    marginTop: 6,
+    fontFamily: font.serif,
+    fontSize: 12,
+    color: color.neutral[600],
   },
 
   instructionCard: {
     backgroundColor: color.surface,
-    borderRadius: 28,
+    borderRadius: radius.md,
     paddingVertical: 17,
     paddingHorizontal: 19,
     marginBottom: 12,
   },
   kicker: {
-    fontFamily: font.bodySemi,
-    fontSize: 10,
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-    color: color.acc[700],
+    fontFamily: font.serif,
+    fontSize: 13,
+    color: color.neutral[600],
     marginBottom: 7,
   },
   instruction: {
@@ -373,7 +369,7 @@ const styles = StyleSheet.create({
 
   repeatCard: {
     backgroundColor: color.acc2[200],
-    borderRadius: 24,
+    borderRadius: 14,
     paddingVertical: 15,
     paddingHorizontal: 18,
     marginBottom: 26,

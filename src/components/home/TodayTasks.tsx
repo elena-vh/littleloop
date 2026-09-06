@@ -16,7 +16,7 @@ function TaskPill({
   onOpen: () => void;
 }) {
   return (
-    <View style={styles.pill}>
+    <View style={styles.row}>
       <Pressable
         onPress={onToggle}
         hitSlop={12}
@@ -24,7 +24,7 @@ function TaskPill({
         accessibilityState={{ checked: task.done }}
         style={[styles.box, task.done ? styles.boxDone : styles.boxOpen]}>
         {task.done && (
-          <Check size={13} strokeWidth={3.4} color={color.bg} />
+          <Check size={12} strokeWidth={3.4} color={color.bg} />
         )}
       </Pressable>
       <Pressable style={styles.textWrap} onPress={onOpen}>
@@ -73,18 +73,18 @@ export default function TodayTasks() {
       </View>
 
       {tasks.length === 0 ? (
-        <View style={styles.emptyPill}>
-          <Text style={styles.emptyText}>No tasks yet — just cozy vibes.</Text>
-        </View>
+        <Text style={styles.emptyText}>Nothing today.</Text>
       ) : (
         <View style={styles.list}>
-          {tasks.map((t) => (
-            <TaskPill
-              key={t.id}
-              task={t}
-              onToggle={() => toggle(t.id)}
-              onOpen={() => openEdit(t)}
-            />
+          {tasks.map((t, i) => (
+            <View key={t.id}>
+              {i > 0 && <View style={styles.divider} />}
+              <TaskPill
+                task={t}
+                onToggle={() => toggle(t.id)}
+                onOpen={() => openEdit(t)}
+              />
+            </View>
           ))}
         </View>
       )}
@@ -117,47 +117,43 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 12,
   },
-  heading: { fontFamily: font.heading, fontSize: 19, color: color.text },
+  heading: { fontFamily: font.heading, fontSize: 17, color: color.text },
   addBtn: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     borderRadius: radius.pill,
-    backgroundColor: color.acc[100],
+    borderWidth: 1.5,
+    borderColor: color.divider,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  list: { gap: 10 },
-  pill: {
+  list: {},
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    minHeight: 52,
-    paddingVertical: 15,
-    paddingHorizontal: 18,
-    borderRadius: radius.pill,
-    backgroundColor: color.surface,
+    minHeight: 48,
+    paddingVertical: 12,
   },
+  divider: { height: 1, backgroundColor: color.divider },
   box: {
-    width: 22,
-    height: 22,
-    borderRadius: radius.pill,
+    width: 20,
+    height: 20,
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  boxOpen: { borderWidth: 2, borderColor: color.neutral[400] },
-  boxDone: { backgroundColor: color.acc2[600] },
+  boxOpen: { borderWidth: 1.5, borderColor: color.neutral[400] },
+  boxDone: { backgroundColor: color.acc2[600], borderColor: color.acc2[600] },
   textWrap: { flex: 1 },
-  text: { fontFamily: font.body, fontSize: 14.5, color: color.text },
+  text: { fontFamily: font.body, fontSize: 14, color: color.text },
   textDone: {
     color: color.neutral[600],
     textDecorationLine: 'line-through',
   },
-  emptyPill: {
-    minHeight: 52,
-    justifyContent: 'center',
-    paddingHorizontal: 18,
-    borderRadius: radius.pill,
-    backgroundColor: color.surface,
+  emptyText: {
+    fontFamily: font.serif,
+    fontSize: 14,
+    color: color.neutral[600],
   },
-  emptyText: { fontFamily: font.body, fontSize: 14.5, color: color.neutral[600] },
 });

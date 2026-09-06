@@ -30,7 +30,7 @@ export default function Home() {
     useCallback(() => {
       setProjects(listProjects());
       setStreak(getGlobalStreakDays(TZ));
-    }, [])
+    }, []),
   );
 
   const current = projects[0];
@@ -45,10 +45,10 @@ export default function Home() {
         showsVerticalScrollIndicator={false}>
         <StreakChip count={streak} onPress={() => router.push('/profile')} />
 
-        <Text style={styles.greeting}>
-          {line1}
-          {!!line2 && `\n${line2}`}
-        </Text>
+        <View style={styles.greetingWrap}>
+          <Text style={styles.greetingLine1}>{line1}</Text>
+          {!!line2 && <Text style={styles.greetingLine2}>{line2}</Text>}
+        </View>
 
         {current && (
           <View style={styles.block}>
@@ -86,13 +86,19 @@ const styles = StyleSheet.create({
     paddingTop: 64,
     paddingHorizontal: 22,
   },
-  greeting: {
-    fontFamily: font.heading,
-    fontSize: 30,
-    lineHeight: 34,
-    color: color.text,
-    marginTop: 6,
-    marginBottom: 22,
+  greetingWrap: { marginTop: 10, marginBottom: 24 },
+  greetingLine1: {
+    fontFamily: font.serif,
+    fontSize: 16,
+    color: color.neutral[700],
   },
-  block: { marginTop: 26 },
+  greetingLine2: {
+    fontFamily: font.headingBlack,
+    fontSize: 34,
+    lineHeight: 38,
+    letterSpacing: -0.5,
+    color: color.text,
+    marginTop: 2,
+  },
+  block: { marginTop: 30 },
 });
