@@ -11,11 +11,6 @@
   "dependencies": {
     "@expo-google-fonts/caprasimo": "^0.4.0",
     "@expo-google-fonts/figtree": "^0.4.1",
-    "@expo-google-fonts/fraunces": "^0.4.1",
-    "@expo-google-fonts/inter": "^0.4.2",
-    "@expo-google-fonts/lexend": "^0.4.1",
-    "@expo-google-fonts/mulish": "^0.4.2",
-    "@expo-google-fonts/quicksand": "^0.4.1",
     "@expo/metro-runtime": "^57.0.15",
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "^2.2.0",

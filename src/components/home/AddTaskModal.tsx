@@ -1,5 +1,4 @@
-// src/components/AddTaskModal.tsx
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   Modal,
   View,
@@ -7,28 +6,15 @@ import {
   Pressable,
   TextInput,
   StyleSheet,
-  TouchableWithoutFeedback,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
-  AccessibilityInfo,
 } from 'react-native';
-import { Animated, PanResponder } from 'react-native';
+import { X, Trash2 } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import KittyButton from '@assets/icons/kitty_button.svg';
-import DisabledSave from '@assets/icons/disabled_save_big.svg';
-import Close from '@assets/icons/close.svg';
-import Save from '@assets/icons/save_big.svg';
-
-import Quotes from '@assets/icons/quotes.svg';
+import { color, font, radius } from '@src/theme/theme';
 import { Task, useTasks } from '@src/store/tasks';
-import { radius, spacing } from '@src/theme/tokens';
-import DeleteTask from '@assets/icons/delete_task.svg';
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
-import Select, { Option } from '../ui/Select';
 
 type Props = {
   visible: boolean;
@@ -40,248 +26,133 @@ type Props = {
   selectedTask?: Task | null;
   text: string;
 };
-type projects = {
-  label: string;
-};
 
 export default function AddTaskModal({
   visible,
   onClose,
-  defaultText = '',
   projectId,
   onDelete,
   setText,
   text,
   selectedTask = null,
 }: Props) {
-  const insets = useSafeAreaInsets(); // { top, bottom, left, right }
+  const insets = useSafeAreaInsets();
   const update = useTasks((s) => s.update);
   const add = useTasks((s) => s.add);
   const remove = useTasks((s) => s.remove);
-  const { tasks } = useTasks();
-  const projects = [{ label: 'Baby hat', value: 'baby hat' }];
-  const [isScreenReaderOn, setIsScreenReaderOn] = useState(false);
 
-  const createTask = () => {
-    if (!text.trim()) {
-      return;
-    }
-    add(text.trim(), undefined, projectId);
+  const canSave = text.trim().length > 0;
+  const editing = !!selectedTask?.id;
+
+  const save = () => {
+    if (!canSave) return;
+    Keyboard.dismiss();
+    if (editing) update(selectedTask!.id, { text: text.trim() });
+    else add(text.trim(), undefined, projectId);
     onClose();
   };
-  const editTask = () => {
-    if (!text.trim()) {
-      return;
-    }
-    const value = text.trim();
 
-    if (selectedTask) update(selectedTask.id, { text: value });
-    onClose();
-  };
-  const deleteTask = () => {
+  const del = () => {
     if (selectedTask) remove(selectedTask.id);
+    onDelete();
     onClose();
   };
+
   return (
-    <Animated.View
-      style={[styles.container, { transform: [{ translateY: 0 }], bottom: 0 }]}>
-      <Modal
-        presentationStyle='pageSheet'
-        visible={visible}
-        animationType='slide'
-        transparent
-        statusBarTranslucent
-        onRequestClose={onClose}
-        accessible
-        accessibilityViewIsModal
-        style={{ height: '100%' }}>
-        <View
-          style={{
-            flex: 1,
-          }}>
-          <TouchableWithoutFeedback onPress={onClose} accessible={false}>
-            <View style={styles.backdrop} />
-          </TouchableWithoutFeedback>
+    <Modal
+      visible={visible}
+      animationType='slide'
+      transparent
+      statusBarTranslucent
+      onRequestClose={onClose}>
+      <Pressable style={styles.backdrop} onPress={onClose} />
+      <KeyboardAvoidingView
+        behavior={Platform.select({ ios: 'padding', android: undefined })}
+        style={styles.avoider}>
+        <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
+          <View style={styles.headRow}>
+            <Pressable onPress={onClose} hitSlop={10} style={styles.iconBtn}>
+              <X size={18} strokeWidth={2.75} color={color.text} />
+            </Pressable>
+            <Text style={styles.title}>{editing ? 'Edit task' : 'New task'}</Text>
+            {editing ? (
+              <Pressable onPress={del} hitSlop={10} style={styles.iconBtn}>
+                <Trash2 size={18} strokeWidth={2.75} color={color.accent} />
+              </Pressable>
+            ) : (
+              <View style={styles.iconBtn} />
+            )}
+          </View>
 
-          <KeyboardAvoidingView
-            behavior={Platform.select({ ios: 'padding', android: undefined })}
-            style={styles.avoider}>
-            <TouchableWithoutFeedback
-              onPress={Keyboard.dismiss}
-              accessible={false}>
-              <View style={styles.container} accessibilityLiveRegion='polite'>
-                <View style={styles.headerRow}>
-                  <Pressable onPress={onClose} accessibilityLabel='Close'>
-                    <Close />
-                  </Pressable>
+          <TextInput
+            multiline
+            style={styles.input}
+            placeholder='Start typing your idea…'
+            placeholderTextColor={color.neutral[600]}
+            value={text}
+            onChangeText={setText}
+            autoFocus
+            accessibilityLabel='Task description'
+          />
 
-                  {text.trim().length > 0 ? (
-                    <Save
-                      style={styles.saveButton}
-                      onPress={selectedTask?.id ? editTask : createTask}
-                    />
-                  ) : (
-                    <DisabledSave style={styles.saveButton} />
-                  )}
-                </View>
-                <View>
-                  <TextInput
-                    multiline
-                    style={styles.input}
-                    placeholder='Start typing your ideas'
-                    placeholderTextColor='#9CA3AF'
-                    value={text}
-                    onChangeText={setText}
-                    autoFocus={!isScreenReaderOn}
-                    returnKeyType='done'
-                    onSubmitEditing={selectedTask?.id ? editTask : createTask}
-                    accessibilityLabel='Task description'
-                  />
-                </View>
-                <View>
-                  <View
-                    style={{
-                      gap: 16,
-                      display: 'flex',
-                      position: 'relative',
-                      padding: 10,
-                      borderRadius: 16,
-                      backgroundColor: '#ebddc5',
-                    }}>
-                    <View>
-                      <Select
-                        label='Assign to project'
-                        options={projects}
-                        value='baby hat'
-                        onChange={() => {}}
-                      />
-                    </View>
-                    <View
-                      style={{ borderColor: '#F6F5F3', borderBottomWidth: 1 }}
-                    />
-                    <Select
-                      label='Importance'
-                      options={[{ label: 'Baby hat', value: 'baby hat' }]}
-                      value='aaa'
-                      onChange={() => {}}
-                    />
-                  </View>
-                </View>
-                <View style={styles.actionsRow}>
-                  <Pressable onPress={onDelete}>
-                    <DeleteTask
-                      style={styles.deleteButton}
-                      onPress={deleteTask}
-                    />
-                  </Pressable>
-                </View>
-              </View>
-            </TouchableWithoutFeedback>
-          </KeyboardAvoidingView>
+          <Pressable
+            onPress={save}
+            disabled={!canSave}
+            style={[styles.saveBtn, !canSave && { opacity: 0.4 }]}>
+            <Text style={styles.saveText}>{editing ? 'Save changes' : 'Add task'}</Text>
+          </Pressable>
         </View>
-      </Modal>
-    </Animated.View>
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#F6F5F3',
-    height: '100%',
+    backgroundColor: 'rgba(32,30,29,0.35)',
   },
-  quotes: {
-    position: 'absolute',
-    top: 25,
-    left: 30,
+  avoider: { flex: 1, justifyContent: 'flex-end' },
+  sheet: {
+    backgroundColor: color.bg,
+    borderTopLeftRadius: radius.cardLg,
+    borderTopRightRadius: radius.cardLg,
+    paddingHorizontal: 20,
+    paddingTop: 12,
   },
-  avoider: {
-    flex: 1,
-    justifyContent: 'flex-end', // slide up from bottom
-  },
-  saveButton: { position: 'absolute', top: 0, right: 0 },
-  deleteButton: { top: 20, marginBottom: 20, marginHorizontal: spacing.lg },
-  container: {
-    flex: 1,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: spacing['2xl'],
-    marginTop: 40,
-    paddingBottom: spacing['2xl'],
-    // subtle shadow on top
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: -8 },
-    elevation: 12,
-  },
-  headerRow: {
+  headRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-    marginHorizontal: spacing.lg,
+    marginBottom: 12,
   },
-  title: {
-    fontFamily: 'Mulish_600SemiBold',
-    fontSize: 18,
-  },
-  label: { fontFamily: 'Mulish_600SemiBold', fontSize: 16 },
-
-  closeX: {
-    fontSize: 18,
-    color: '#6B7280',
-  },
-  input: {
-    position: 'relative',
-    height: 120,
-    marginHorizontal: spacing.lg,
-    top: 0,
-    textAlignVertical: 'top',
-    borderRadius: radius.lg,
-    backgroundColor: 'white',
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-    paddingTop: 20,
-    paddingLeft: 20,
-    fontFamily: 'Fraunces_300Light',
-    fontSize: 20,
-    color: '#111827',
-    marginTop: spacing.sm,
-  },
-  actionsRow: {
-    flexDirection: 'column',
+  iconBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.pill,
+    backgroundColor: color.surface,
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  kittyButton: {
-    alignSelf: 'center',
-    position: 'absolute',
-    marginBottom: 10,
+  title: { fontFamily: font.heading, fontSize: 16, color: color.text },
+  input: {
+    minHeight: 110,
+    textAlignVertical: 'top',
+    fontFamily: font.body,
+    fontSize: 18,
+    lineHeight: 25,
+    color: color.text,
+    backgroundColor: color.surface,
+    borderRadius: radius.card,
+    padding: 16,
   },
-  button: {
-    borderRadius: 30,
-    marginTop: 55,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    width: '100%',
+  saveBtn: {
+    marginTop: 16,
+    minHeight: 50,
+    borderRadius: radius.pill,
+    backgroundColor: color.accent,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  primary: {
-    backgroundColor: '#282929',
-  },
-  ghost: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#E6E6E9',
-  },
-  buttonLabel: {
-    fontFamily: 'Mulish_600SemiBold',
-    fontSize: 15,
-  },
-  primaryLabel: {
-    color: '#fff',
-  },
-  ghostLabel: {
-    color: '#374151',
-  },
+  saveText: { fontFamily: font.bodySemi, fontSize: 15, color: color.bg },
 });
