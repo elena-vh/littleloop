@@ -21,16 +21,16 @@ import { color, font, radius, shadow, HIT } from '@src/theme/theme';
 import ProgressRing from '@src/components/ui/ProgressRing';
 import { getProjectById, type Project } from '@src/db/projectsRepo';
 import { startSession, finishSession } from '@src/db/sessionsRepo';
-import { useProgress, PRIMARY_COUNTER } from '@src/store/progress';
+import { useProgress } from '@src/store/progress';
+import {
+  REPEAT_LEN,
+  instructionFor,
+  stitchCountFor,
+  repeatInfo,
+} from '@src/lib/pattern';
 
-const REPEAT_LEN = 8;
 const DEFAULT_TOTAL: Record<string, number> = { body: 250, sleeve: 60 };
 const UNIT: Record<string, string> = { body: 'rows', sleeve: 'rounds' };
-
-const instructionFor = (n: number) =>
-  n % 2 === 1
-    ? 'K2, m1L, knit to last 2 sts, m1R, k2.'
-    : 'Knit all sts, slipping the markers as you pass them.';
 
 function fmtClock(total: number) {
   const s = Math.max(0, Math.floor(total));
@@ -80,12 +80,10 @@ export default function CounterScreen() {
 
   // ---- derived, never stored ----
   const pct = total > 0 ? Math.min(1, row / total) : 0;
-  const repeatsTotal = Math.max(1, Math.ceil(total / REPEAT_LEN));
-  const repeatIdx = row < 1 ? 0 : Math.floor((row - 1) / REPEAT_LEN) + 1;
-  const withinRepeat = row < 1 ? 0 : ((row - 1) % REPEAT_LEN) + 1;
+  const { repeatsTotal, repeatIdx, withinRepeat } = repeatInfo(row, total);
   const repeatPct = withinRepeat ? withinRepeat / REPEAT_LEN : 0;
   const instruction = instructionFor(row);
-  const stitchCount = 118 + Math.floor(row / 2);
+  const stitchCount = stitchCountFor(row);
 
   const inc = () => bump(projectId, counterName, 1);
   const dec = () => bump(projectId, counterName, -1);
