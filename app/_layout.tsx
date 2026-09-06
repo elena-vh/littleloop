@@ -1,3 +1,5 @@
+import '../global.css';
+
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -35,12 +37,14 @@ import {
 } from '@expo-google-fonts/fraunces';
 import { ThemeProvider } from '@src/theme/ThemeProvider';
 import { migrate } from '@src/db/migrate';
+import { useTasks } from '@src/store/tasks';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   useEffect(() => {
     migrate();
+    useTasks.getState().load();
   }, []);
 
   const [loaded] = useFonts({

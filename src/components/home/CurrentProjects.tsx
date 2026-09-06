@@ -11,7 +11,7 @@ import {
 import { Card } from '../ui/Card';
 import { Body } from '../ui/Text';
 import { Task, useTasks } from '@src/store/tasks';
-import AddTaskIcon from '@assets/icons/plus.svg';
+import AddTaskIcon from '@assets/icons/fi-br-plus.svg';
 import TrashIcon from '@assets/icons/trash.svg';
 import EmptyStateCard from '../ui/EmptyStateCard';
 import AddTaskModal from './AddTaskInput';
@@ -22,7 +22,7 @@ import { Project, listProjects } from '@src/db/projectsRepo';
 import { useFocusEffect } from 'expo-router';
 import ProjectsList from './ProjectsList';
 
-const CurrentProjects = ({ onPressPlus }) => {
+const CurrentProjects = ({ onPressPlus }: { onPressPlus: () => void }) => {
   const { tasks, toggle, remove } = useTasks();
   const today = new Date().toISOString().slice(0, 10);
   const todays = tasks.filter((t) => t.dueDate === today && !t.done);
@@ -41,7 +41,7 @@ const CurrentProjects = ({ onPressPlus }) => {
           onPress={onPressPlus}
           accessibilityLabel='Add project'
           style={styles.plusButton}>
-          <AddTaskIcon />
+          <AddTaskIcon width={20} />
         </Pressable>
       </View>
       <View>
@@ -55,11 +55,13 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    alignItems: 'center',
+    paddingLeft: 16,
   },
   title: {
-    fontFamily: 'Lexend_600SemiBold',
+    fontFamily: 'Fraunces_600SemiBold',
     fontSize: 20,
+    textAlign: 'left',
   },
   plusButton: {
     width: 38,

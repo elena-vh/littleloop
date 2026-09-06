@@ -1,9 +1,10 @@
 import { Project, deleteProject, listProjects } from '@src/db/projectsRepo';
-import { useFocusEffect } from '@react-navigation/native';
 import React, { useState, useCallback } from 'react';
 import { Alert, FlatList, Pressable, Text } from 'react-native';
 import ProjectRow from './ProjectRow';
 import EmptyStateCard from '../ui/EmptyStateCard';
+import { ProjectsCarousel } from '../ui/ProjectsCarousel';
+import { router, useFocusEffect } from 'expo-router';
 
 export default function ProjectsList() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -33,15 +34,19 @@ export default function ProjectsList() {
     }, [refresh])
   );
   return (
-    <FlatList
+    <ProjectsCarousel
       data={projects}
-      keyExtractor={(p) => p.id}
-      renderItem={({ item }) => (
-        <ProjectRow onDelete={handleDelete} project={item} />
-      )}
-      ListEmptyComponent={
-        <EmptyStateCard message='✨ Cast on your first project!' />
-      }
+      onPressItem={(item) => router.push(`/projects/${item.id}`)}
     />
+    // <FlatList
+    //   data={projects}
+    //   keyExtractor={(p) => p.id}
+    //   renderItem={({ item }) => (
+    //     <ProjectRow onDelete={handleDelete} project={item} />
+    //   )}
+    //   ListEmptyComponent={
+    //     <EmptyStateCard message='✨ Cast on your first project!' />
+    //   }
+    // />
   );
 }

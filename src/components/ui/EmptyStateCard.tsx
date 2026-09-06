@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
 
-const EmptyStateCard = ({ message }) => {
+const EmptyStateCard = ({ message }: { message: string }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.text}>{message}</Text>

@@ -43,7 +43,7 @@ const msUntilNextBoundary = (now = new Date()) => {
 
 export const useGreeting = (name?: string) => {
   const [now, setNow] = useState(() => new Date());
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const schedule = () => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Pressable,
@@ -7,25 +7,49 @@ import {
   Modal,
   TouchableOpacity,
   FlatList,
+  Alert,
 } from 'react-native';
+import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+
 import { Card } from '../ui/Card';
 import { Body } from '../ui/Text';
 import { Task, useTasks } from '@src/store/tasks';
-import AddTaskIcon from '@assets/icons/plus.svg';
+import AddTaskIcon from '@assets/icons/fi-br-plus.svg';
 import TrashIcon from '@assets/icons/trash.svg';
 import EmptyStateCard from '../ui/EmptyStateCard';
 import AddTaskModal from './AddTaskModal';
 import AddTaskInput from './AddTaskInput';
 import { spacing } from '@src/theme/tokens';
+import { listProjects, deleteProject } from '@src/db/projectsRepo';
+import TaskRow from './TaskRow';
+import { useFocusEffect } from 'expo-router';
 
 const Tasks = () => {
-  const { tasks, toggle, remove } = useTasks();
+  const { tasks } = useTasks();
   const today = new Date().toISOString().slice(0, 10);
   const todays = tasks.filter((t) => t.dueDate === today && !t.done);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isTaskInputVisible, setIsTaskInputVisible] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+
   const [text, setText] = useState('');
+
+  // const refresh = useCallback(() => {
+  //   setProjects(listProjects());
+  // }, []);
+  const handleDelete = (id: string) => {
+    Alert.alert('Delete project?', 'This will remove it from your list.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          remove(id);
+          //  refresh();
+        },
+      },
+    ]);
+  };
   console.log({ text });
   const openAdd = () => {
     setSelectedTask(null);
@@ -37,6 +61,8 @@ const Tasks = () => {
     setText(task.text); // ✅ load draft from saved task
     setIsModalVisible(true);
   };
+  const toggle = useTasks((s) => s.toggle);
+  const remove = useTasks((s) => s.remove);
 
   return (
     <View style={styles.wrapper}>
@@ -46,7 +72,7 @@ const Tasks = () => {
           onPress={openAdd}
           accessibilityLabel='Add task'
           style={styles.plusButton}>
-          <AddTaskIcon />
+          <AddTaskIcon width={20} />
         </Pressable>
       </View>
       <View>
@@ -58,28 +84,18 @@ const Tasks = () => {
             keyExtractor={(item) => item.id}
             scrollEnabled={false}
             renderItem={({ item }) => (
-              <Pressable
-                onPress={() => openEdit(item)}
-                style={{
-                  backgroundColor: '#fff',
-                  padding: spacing.xl,
-                  borderRadius: 12,
-                  marginHorizontal: spacing.md,
-                  marginTop: spacing.sm,
-                }}>
-                <Text
-                  style={{
-                    fontFamily: 'Quicksand_500Medium',
-                  }}>
-                  {item.text}
-                </Text>
-              </Pressable>
+              <TaskRow
+                onToggle={toggle}
+                task={item}
+                openTask={openEdit}
+                onDelete={handleDelete}
+              />
             )}
           />
         )}
       </View>
       <AddTaskModal
-        onDelete={() => remove(selectedTask?.id)}
+        onDelete={() => selectedTask && remove(selectedTask.id)}
         visible={isModalVisible}
         onClose={() => setIsModalVisible(false)}
         defaultText={selectedTask?.text ?? ''}
@@ -107,11 +123,13 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingLeft: 16,
+    alignItems: 'center',
     marginTop: 16,
+    marginBottom: 10,
   },
   title: {
-    fontFamily: 'Lexend_600SemiBold',
+    fontFamily: 'Fraunces_600SemiBold',
     fontSize: 20,
   },
   plusButton: {

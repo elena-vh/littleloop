@@ -47,7 +47,74 @@ export type Project = {
   updatedAt: string;
 };
 
+// DB row shape (what SQLite returns)
+export type ProjectRow = {
+  id: string;
+  craft: string;
+  name: string;
+
+  tags_json: string | null;
+  pattern_link: string | null;
+  pattern_file_json: string | null;
+
+  yarn_id: string | null;
+  tools: string | null;
+  skeins: number | null;
+
+  start_date: string | null;
+  end_date: string | null;
+  target_measurement: string | null;
+
+  photos_json: string | null;
+
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+};
 const now = () => new Date().toISOString();
+function safeJsonParse<T>(value: string | null, fallback: T): T {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+export function mapProjectRow(row: ProjectRow): Project {
+  return {
+    id: row.id,
+    craft: row.craft as Project['craft'],
+    name: row.name,
+
+    tags: safeJsonParse<string[]>(row.tags_json, []),
+
+    patternLink: row.pattern_link ?? null,
+    patternFile: safeJsonParse<any | null>(row.pattern_file_json, null),
+
+    yarnId: row.yarn_id ?? null,
+    tools: row.tools ?? null,
+    skeins: row.skeins ?? null,
+
+    startDate: row.start_date ?? null,
+    endDate: row.end_date ?? null,
+    targetMeasurement: row.target_measurement ?? null,
+
+    photos: safeJsonParse<PhotoRef[]>(row.photos_json, []),
+
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export async function getProjectById(id: string) {
+  // Example shape — adapt to your db wrapper
+  const row = await db.getFirstAsync<ProjectRow>(
+    `SELECT * FROM projects WHERE id = ? AND deleted_at IS NULL LIMIT 1`,
+    [id]
+  );
+  return row ? mapProjectRow(row) : null;
+}
 
 export function createProject(p: {
   id: string;

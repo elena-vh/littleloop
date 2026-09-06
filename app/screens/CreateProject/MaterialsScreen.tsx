@@ -31,17 +31,17 @@ export default function MaterialsScreen() {
 
   const [tools, setTools] = useState('4.5mm circular needles');
   const [skeins, setSkeins] = useState('10');
-
+  const [yarn, setYarn] = useState('');
   const filtered = useMemo(() => {
     const q = yarnQuery.trim().toLowerCase();
     if (!q) return YARNS;
     return YARNS.filter((y) => y.toLowerCase().includes(q));
   }, [yarnQuery]);
-
+  console.log({ yarnQuery });
   const showDropdown = yarnFocused && filtered.length > 0;
   const onContinue = () => {
     setMaterials({
-      yarnId: 'selectedYarnId',
+      yarnId: yarnQuery,
       tools,
       skeins: Number(skeins || 0),
     });
@@ -77,6 +77,7 @@ export default function MaterialsScreen() {
               onChangeText={(t) => {
                 setYarnSelected(null);
                 setYarnQuery(t);
+                setYarn(t);
               }}
               onFocus={() => setYarnFocused(true)}
               onBlur={() => {

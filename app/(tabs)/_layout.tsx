@@ -19,32 +19,15 @@ import Yarn from '../../assets/icons/yarn.svg';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@src/theme/ThemeProvider';
+import { colors } from '@src/theme/tokens';
 
-// const BottomInsetBackground = () => {
-//   const { bottom } = useSafeAreaInsets();
-//   const { theme } = useTheme();
-//   if (bottom === 0) return null;
-//   return (
-//     <View
-//       pointerEvents='none'
-//       style={{
-//         position: 'absolute',
-//         left: 0,
-//         right: 0,
-//         bottom: 0,
-//         height: bottom,
-//         backgroundColor: theme.colors.bg,
-//       }}
-//     />
-//   );
-// };
 export default function TabsLayout() {
   return (
     <>
       <Tabs
         screenOptions={{
           headerShown: false,
-          tabBarActiveTintColor: '#2A2229', // ← your brand color
+          tabBarActiveTintColor: colors.terracotta,
           tabBarInactiveTintColor: 'none', // ← gray
           tabBarLabelStyle: {
             color: '#6a6a6a',
@@ -61,22 +44,10 @@ export default function TabsLayout() {
             shadowOpacity: 0.06,
             shadowRadius: 12,
             shadowOffset: { width: 0, height: -6 },
-            // Android shadow
             elevation: 12,
             height: 80,
             paddingTop: 6,
-            // borderRadius: 80,
-            // marginBottom: 16,
-            // marginLeft: 16,
-            // marginRight: 16,
           },
-          // tabBarBackground: () => (
-          //   <BlurView
-          //     tint='systemMaterial' // or 'regular'/'light'/'dark'
-          //     intensity={60} // bump this up if it looks too subtle
-          //     style={StyleSheet.absoluteFill}
-          //   />
-          // ),
         }}>
         <Tabs.Screen
           name='index'
@@ -125,7 +96,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name='yarn'
           options={{
-            title: 'Yarn & tools',
+            title: 'Yarn',
             tabBarIcon: ({ color, size, focused }) =>
               focused ? (
                 <YarnActive

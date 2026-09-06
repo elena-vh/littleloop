@@ -5,7 +5,6 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 
 import { Body } from '../ui/Text';
 import { Button } from '../ui/Button';
-import { useTheme } from '@react-navigation/native';
 import { colors, spacing } from '@src/theme/tokens';
 
 const WEEK = ['S', 'M', 'T', 'W', 'T', 'F', 'S']; // left yarn icon will mark today
@@ -15,7 +14,6 @@ type Props = {
   onLoggedToday?: (value: boolean) => void;
 };
 const KnittingTodayCard = ({ onMenu, onLoggedToday }: Props) => {
-  const { theme } = useTheme();
   const [knitToday, setKnitToday] = useState(false);
   const [weekLog, setWeekLog] = useState<boolean[]>([
     false,
@@ -52,14 +50,14 @@ const KnittingTodayCard = ({ onMenu, onLoggedToday }: Props) => {
                 accessibilityLabel={`${d} ${active ? 'knit' : 'not knit'}`}
                 style={[
                   styles.pill,
-                  { backgroundColor: active ? 'none' : '#E9E9ED' },
+                  { backgroundColor: active ? 'none' : '#D9D9D9' },
                 ]}>
                 {active ? (
                   <YarnIcon width={21} height={21} />
                 ) : (
                   <Text
                     style={{
-                      color: '#5C5C66',
+                      color: 'white',
                       fontFamily: 'Quicksand_600SemiBold',
                     }}>
                     {d}
@@ -107,6 +105,7 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
+    color: 'white',
   },
   chip: {
     marginLeft: 10,

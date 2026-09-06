@@ -10,6 +10,8 @@ export default function ProjectRow({
   project: Project;
   onDelete: (id: string) => void;
 }) {
+  const R = 30;
+
   const renderRightActions = () => (
     <Pressable
       onPress={() => onDelete(project.id)}
@@ -18,35 +20,47 @@ export default function ProjectRow({
         backgroundColor: '#E33',
         alignItems: 'center',
         justifyContent: 'center',
+        borderRadius: 0, // ✅ flat seam
       }}>
       <Text style={{ color: 'white', fontWeight: '800' }}>Delete</Text>
     </Pressable>
   );
+
   return (
     <View style={{ marginHorizontal: spacing.md, marginTop: spacing.sm }}>
-      <Swipeable renderRightActions={renderRightActions} overshootRight={false}>
-        <Pressable
-          style={{
-            padding: 14,
-            backgroundColor: 'white',
-            borderWidth: 1,
-            borderColor: '#eee',
-          }}>
-          <Text style={{ fontSize: 16, fontWeight: '700' }}>
-            {project.name}
-          </Text>
-
-          <Text style={{ color: '#777', marginTop: 4 }}>
-            {project.craft} · {project.tags?.join(', ') || 'No tags'}
-          </Text>
-
-          {project.targetMeasurement ? (
-            <Text style={{ color: '#777', marginTop: 4 }}>
-              Target: {project.targetMeasurement}
+      {/* ✅ rounded outer shape + clipping */}
+      <View style={{ borderRadius: R, overflow: 'hidden' }}>
+        <Swipeable
+          renderRightActions={renderRightActions}
+          overshootRight={false}>
+          <Pressable
+            style={{
+              padding: spacing.lg,
+              backgroundColor: 'white',
+              borderWidth: 1,
+              borderColor: '#F0F0F0',
+              borderRadius: 0, // ✅ flat seam (wrapper handles rounding)
+            }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontFamily: 'Mulish_600SemiBold',
+              }}>
+              {project.name}
             </Text>
-          ) : null}
-        </Pressable>
-      </Swipeable>
+
+            <Text style={{ color: '#777', marginTop: 4 }}>
+              {project.craft} · {project.tags?.join(', ') || 'No tags'}
+            </Text>
+
+            {project.targetMeasurement ? (
+              <Text style={{ color: '#777', marginTop: 4 }}>
+                Target: {project.targetMeasurement}
+              </Text>
+            ) : null}
+          </Pressable>
+        </Swipeable>
+      </View>
     </View>
   );
 }

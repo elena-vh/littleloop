@@ -30,8 +30,8 @@ type Props = {
   openModal: () => void;
   defaultText?: string;
   projectId?: string;
-  setText;
-  text;
+  setText: React.Dispatch<React.SetStateAction<string>>;
+  text: string;
 };
 
 export default function AddTaskInput({
@@ -134,7 +134,7 @@ export default function AddTaskInput({
 
 const styles = StyleSheet.create({
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0,0,0,0.35)',
   },
   quotes: {

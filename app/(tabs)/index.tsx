@@ -8,10 +8,8 @@ import {
   ScrollView,
   FlatList,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import { router } from 'expo-router';
 
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import HeaderShape from '@assets/header.svg';
 
 import { usePrefs } from '@src/store/prefs';
@@ -21,7 +19,7 @@ import KnittingStreakCard from '@src/components/home/KnittingTodayCard';
 import Tasks from '@src/components/home/Tasks';
 import { useState } from 'react';
 import CurrentProjects from '@src/components/home/CurrentProjects';
-import { RootStackParamList } from '@app/navigation/RootNavigator';
+import { DailyCheckInMinimalCard } from '@src/components/home/DailyCheckInCard';
 
 export default function Home() {
   const name = usePrefs((s) => s.name);
@@ -43,12 +41,30 @@ export default function Home() {
               <HeaderShape
                 width='100%'
                 height={240}
+                style={{ top: -50 }}
                 preserveAspectRatio='xMidYMid slice'
               />
-              <View style={styles.headerContent}>
+              {/* <View style={{ height: 160 }} /> */}
+              {/* <View style={styles.headerContent}>
                 <Text style={styles.greeting}>{greeting}</Text>
-              </View>
-              <KnittingStreakCard />
+              </View> */}
+              {/* <KnittingStreakCard /> */}
+              <DailyCheckInMinimalCard
+                greeting={greeting}
+                streakCount={1}
+                selectedDayLabel='Mo'
+                checkedInToday={true}
+                onPressBegin={() => {
+                  // navigate to check-in flow / modal
+                  console.log('Begin check-in');
+                }}
+                onPressProfile={() => {
+                  console.log('Open profile');
+                }}
+                onPressStreak={() => {
+                  console.log('Open streak / stats');
+                }}
+              />
             </View>
 
             <CurrentProjects onPressPlus={() => setProjectsMenuOpen(true)} />
@@ -64,8 +80,6 @@ export default function Home() {
     </>
   );
 }
-type RootNav = NativeStackNavigationProp<RootStackParamList>;
-
 function ProjectsMenuModal({
   visible,
   onClose,
@@ -73,9 +87,6 @@ function ProjectsMenuModal({
   visible: boolean;
   onClose: () => void;
 }) {
-  const navigation = useNavigation<RootNav>();
-  // const rootNav = navigation.getParent<RootNav>(); // root stack nav
-
   const go = (craft: 'crochet' | 'knitting') => {
     onClose();
     requestAnimationFrame(() => {
@@ -130,7 +141,7 @@ const styles = StyleSheet.create({
   sectionHeader: {
     paddingHorizontal: 16,
     paddingTop: 18,
-    paddingBottom: 10,
+    marginBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -241,6 +252,7 @@ const styles = StyleSheet.create({
   },
   header: {
     position: 'relative',
+    marginBottom: -40,
   },
   headerContent: {
     position: 'absolute',

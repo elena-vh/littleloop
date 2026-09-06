@@ -1,60 +1,97 @@
+import * as Crypto from 'expo-crypto';
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  createTask,
+  listTasks,
+  updateTask,
+  deleteTask,
+} from '@src/db/tasksRepo';
 
 export type Task = {
   id: string;
   text: string;
   done: boolean;
-  dueDate?: string; // "YYYY-MM-DD" optional
-  projectId?: string; // link to a project if needed
-  createdAt?: number;
+  dueDate?: string | null;
+  projectId?: string | null;
 };
 
-type State = {
+type TasksState = {
   tasks: Task[];
-  add: (text: string, dueDate?: string, projectId?: string) => void;
-  update: (id: string, patch) => void;
+  load: () => void;
+
+  add: (
+    text: string,
+    dueDate?: string | null,
+    projectId?: string | null
+  ) => void;
+  update: (id: string, patch: Partial<Omit<Task, 'id'>>) => void;
   toggle: (id: string) => void;
   remove: (id: string) => void;
-  clearDone: () => void;
+};
+export type TaskRow = {
+  id: string;
+  text: string;
+  done: boolean; // DB stores 0/1, repo converts to boolean
+  dueDate?: string | null; // "YYYY-MM-DD" or null
+  projectId?: string | null; // links to a project or null
+  createdAt: string; // ISO timestamp
+  updatedAt: string; // ISO timestamp
 };
 
-export const useTasks = create<State>()(
-  persist(
-    (set, get) => ({
-      tasks: [],
-      add: (text, dueDate, projectId) =>
-        set({
-          tasks: [
-            ...get().tasks,
-            {
-              id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-              text: text.trim(),
-              done: false,
-              dueDate,
-              projectId,
-              createdAt: Date.now(),
-            },
-          ],
-        }),
-      update: (id, patch) =>
-        set({
-          tasks: get().tasks.map((t) => (t.id === id ? { ...t, ...patch } : t)),
-        }),
-      toggle: (id) =>
-        set({
-          tasks: get().tasks.map((t) =>
-            t.id === id ? { ...t, done: !t.done } : t
-          ),
-        }),
-      remove: (id) => set({ tasks: get().tasks.filter((t) => t.id !== id) }),
-      clearDone: () => set({ tasks: get().tasks.filter((t) => !t.done) }),
-    }),
-    {
-      name: 'littleloop:tasks', // storage key
-      storage: createJSONStorage(() => AsyncStorage),
-      version: 1,
-    }
-  )
-);
+export const useTasks = create<TasksState>((set, get) => ({
+  tasks: [],
+
+  load: () => {
+    const rows = listTasks(); // from SQLite
+    // TaskRow already matches Task shape if you designed it that way
+    set({ tasks: rows.map(mapRowToTask) });
+  },
+
+  add: (text, dueDate = null, projectId = null) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+
+    createTask({
+      id: Crypto.randomUUID(),
+      text: trimmed,
+      dueDate,
+      projectId,
+    });
+
+    get().load();
+  },
+
+  update: (id, patch) => {
+    updateTask(id, {
+      text: patch.text,
+      done: patch.done,
+      dueDate: patch.dueDate ?? null,
+      projectId: patch.projectId ?? null,
+    });
+
+    get().load();
+  },
+
+  toggle: (id) => {
+    const t = get().tasks.find((x) => x.id === id);
+    if (!t) return;
+
+    updateTask(id, { done: !t.done });
+    get().load();
+  },
+
+  remove: (id) => {
+    deleteTask(id);
+    get().load();
+  },
+}));
+
+function mapRowToTask(r: TaskRow): Task {
+  return {
+    id: r.id,
+    text: r.text,
+    done: r.done,
+    dueDate: r.dueDate ?? null,
+    projectId: r.projectId ?? null,
+  };
+}

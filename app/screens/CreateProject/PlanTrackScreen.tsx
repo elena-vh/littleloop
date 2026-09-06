@@ -19,6 +19,7 @@ import * as Crypto from 'expo-crypto';
 import { createProject } from '@src/db/projectsRepo';
 import { useProjectDraft } from '@src/store/projectDraft';
 import { listProjects } from '@src/db/projectsRepo';
+import { persistPickedImage } from '@src/lib/persistImage';
 
 type Props = {
   onSave?: () => void;
@@ -80,7 +81,7 @@ export default function PlanTrackScreen() {
 
     const picked: PhotoRef[] = result.assets.map((a) => ({
       id: `${Date.now()}_${Math.random().toString(16).slice(2)}`,
-      uri: a.uri,
+      uri: persistPickedImage(a.uri, a.mimeType),
       mimeType: a.mimeType,
       width: a.width,
       height: a.height,

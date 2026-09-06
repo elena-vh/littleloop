@@ -2,6 +2,7 @@ export const colors = {
   lavender: '#E6E1F8',
   lilac: '#C7B8EA',
   purple: '#7C3AED',
+  terracotta: '#C1663F',
   gray100: '#F5F5F5',
   gray300: '#D4D4D4',
   gray600: '#525252',
@@ -53,7 +54,7 @@ export const light = {
     text: '#171717',
     subtext: '#525252',
     primary: '#7C3AED', // purple
-    accent: '#E6E1F8', // lavender
+    accent: '#C1663F', // terracotta - streak flame, active tab, + buttons
     border: '#E5E7EB',
     tabBg: 'transparent',
   },
@@ -85,7 +86,7 @@ export const dark: typeof light = {
     text: '#F5F5F5',
     subtext: '#C7C7D1',
     primary: '#A78BFA',
-    accent: '#2A2540',
+    accent: '#D98259', // terracotta, lightened for dark bg
     border: '#1F1F2A',
     tabBg: 'transparent',
   },

@@ -1,7 +1,13 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-const Task = ({ children, onPress }) => {
+const Task = ({
+  children,
+  onPress,
+}: {
+  children: React.ReactNode;
+  onPress?: () => void;
+}) => {
   return (
     <Pressable onPress={onPress} style={styles.task}>
       {children}

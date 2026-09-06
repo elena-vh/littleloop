@@ -25,7 +25,7 @@ const STORAGE_KEY = 'littleloop-theme-mode';
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mode, setModeState] = useState<Mode>('system');
   const [systemScheme, setSystemScheme] = useState<ColorSchemeName>(
-    Appearance.getColorScheme()
+    Appearance.getColorScheme() ?? 'unspecified'
   );
 
   // load saved mode

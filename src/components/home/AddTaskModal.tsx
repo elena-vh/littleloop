@@ -21,7 +21,7 @@ import Close from '@assets/icons/close.svg';
 import Save from '@assets/icons/save_big.svg';
 
 import Quotes from '@assets/icons/quotes.svg';
-import { useTasks } from '@src/store/tasks';
+import { Task, useTasks } from '@src/store/tasks';
 import { radius, spacing } from '@src/theme/tokens';
 import DeleteTask from '@assets/icons/delete_task.svg';
 import {
@@ -37,14 +37,13 @@ type Props = {
   onDelete: () => void;
   defaultText?: string;
   projectId?: string;
-  setText;
-  selectedTask;
-  text;
+  setText: React.Dispatch<React.SetStateAction<string>>;
+  selectedTask?: Task | null;
+  text: string;
 };
 type projects = {
   label: string;
 };
-// export type Option<T extends string> = { label: string; value: T };
 
 export default function AddTaskModal({
   visible,
@@ -54,7 +53,7 @@ export default function AddTaskModal({
   onDelete,
   setText,
   text,
-  selectedTask = {},
+  selectedTask = null,
 }: Props) {
   const insets = useSafeAreaInsets(); // { top, bottom, left, right }
   const update = useTasks((s) => s.update);
@@ -62,31 +61,7 @@ export default function AddTaskModal({
   const remove = useTasks((s) => s.remove);
   const { tasks } = useTasks();
   const projects = [{ label: 'Baby hat', value: 'baby hat' }];
-  // const lastTask = tasks.at(-1) ?? null;
-  console.log({ tasks });
-  // const [text, setText] = useState(defaultText);
   const [isScreenReaderOn, setIsScreenReaderOn] = useState(false);
-  // const panResponder = PanResponder.create({
-  //   onStartShouldSetPanResponder: () => true,
-  //   onPanResponderMove: Animated.event([null, { dy: 0 }], {
-  //     useNativeDriver: false,
-  //   }),
-  //   onPanResponderRelease: (e, gestureState) => {
-  //     if (gestureState.dy > 50) {
-  //       Animated.timing(0,{toValue:0});
-  //     } else {
-  //       Animated.spring(0, {
-  //         toValue: 0,
-  //         tension: 1,
-  //         friction: 20,
-  //         useNativeDriver: true,
-  //       }).start();
-  //     }
-  //   },
-  // });
-  // useEffect(() => {
-  //   AccessibilityInfo.isScreenReaderEnabled().then(setIsScreenReaderOn);
-  // }, []);
 
   const createTask = () => {
     if (!text.trim()) {
@@ -101,16 +76,15 @@ export default function AddTaskModal({
     }
     const value = text.trim();
 
-    update(selectedTask?.id, { text: value });
+    if (selectedTask) update(selectedTask.id, { text: value });
     onClose();
   };
   const deleteTask = () => {
-    remove(selectedTask?.id);
+    if (selectedTask) remove(selectedTask.id);
     onClose();
   };
   return (
     <Animated.View
-      // {...panResponder.panHandlers}
       style={[styles.container, { transform: [{ translateY: 0 }], bottom: 0 }]}>
       <Modal
         presentationStyle='pageSheet'
@@ -211,7 +185,7 @@ export default function AddTaskModal({
 
 const styles = StyleSheet.create({
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: '#F6F5F3',
     height: '100%',
   },
@@ -248,10 +222,10 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.lg,
   },
   title: {
-    fontFamily: 'Fraunces_600SemiBold',
+    fontFamily: 'Mulish_600SemiBold',
     fontSize: 18,
   },
-  label: { fontFamily: 'Quicksand_500Medium', fontSize: 16 },
+  label: { fontFamily: 'Mulish_600SemiBold', fontSize: 16 },
 
   closeX: {
     fontSize: 18,
@@ -300,7 +274,7 @@ const styles = StyleSheet.create({
     borderColor: '#E6E6E9',
   },
   buttonLabel: {
-    fontFamily: 'Quicksand_600SemiBold',
+    fontFamily: 'Mulish_600SemiBold',
     fontSize: 15,
   },
   primaryLabel: {
