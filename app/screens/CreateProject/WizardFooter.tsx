@@ -30,7 +30,7 @@ export default function WizardFooter({
           styles.btn,
           styles.next,
           pressed && !nextDisabled && styles.nextPressed,
-          nextDisabled && { opacity: 0.4 },
+          nextDisabled && styles.nextDisabled,
         ]}>
         <Text style={styles.nextText}>{nextLabel}</Text>
       </Pressable>
@@ -41,7 +41,7 @@ export default function WizardFooter({
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    gap: 12,
+    justifyContent: 'space-evenly',
     paddingTop: 14,
     borderTopWidth: 1,
     borderTopColor: color.divider,
@@ -51,15 +51,22 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
+    // integer flex ratio (5 : 7 ≈ 1 : 1.4) — Fabric drops a style object that
+    // carries a fractional `flex`, which was killing the terracotta fill.
+    flexBasis: 0,
   },
   back: {
-    flex: 1,
+    flexGrow: 5,
     borderWidth: 1,
     borderColor: color.divider,
   },
   backPressed: { backgroundColor: 'rgba(32,30,29,0.06)' },
   backText: { fontFamily: font.bodySemi, fontSize: 15, color: color.text },
-  next: { flex: 1.4, backgroundColor: color.accent },
+  next: {
+    flexGrow: 7,
+    backgroundColor: color.accent,
+  },
   nextPressed: { backgroundColor: color.acc[600] },
+  nextDisabled: { opacity: 0.4 },
   nextText: { fontFamily: font.bodySemi, fontSize: 15, color: color.bg },
 });
