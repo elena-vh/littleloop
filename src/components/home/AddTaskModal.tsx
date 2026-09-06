@@ -28,7 +28,6 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
-import { Card } from '../ui/Card';
 import Select, { Option } from '../ui/Select';
 
 type Props = {
@@ -140,12 +139,14 @@ export default function AddTaskModal({
                   />
                 </View>
                 <View>
-                  <Card
+                  <View
                     style={{
                       gap: 16,
                       display: 'flex',
                       position: 'relative',
                       padding: 10,
+                      borderRadius: 16,
+                      backgroundColor: '#ebddc5',
                     }}>
                     <View>
                       <Select
@@ -164,7 +165,7 @@ export default function AddTaskModal({
                       value='aaa'
                       onChange={() => {}}
                     />
-                  </Card>
+                  </View>
                 </View>
                 <View style={styles.actionsRow}>
                   <Pressable onPress={onDelete}>
