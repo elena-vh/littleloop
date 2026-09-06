@@ -8,6 +8,8 @@ import {
   TextInput,
   Image,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import {
   ChevronLeft,
@@ -141,15 +143,18 @@ export default function PlanTrackScreen() {
   };
 
   return (
-    <View
-      style={[
-        styles.screen,
-        { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 },
-      ]}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps='handled'
-        showsVerticalScrollIndicator={false}>
+    <View style={styles.screen}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={[
+            styles.content,
+            { paddingTop: insets.top + 20 },
+          ]}
+          keyboardShouldPersistTaps='handled'
+          showsVerticalScrollIndicator={false}>
         <WizardHeader step={3} title='Plan & track' />
 
         <View style={styles.pillRow}>
@@ -285,21 +290,25 @@ export default function PlanTrackScreen() {
             </View>
           )}
         </View>
+        </ScrollView>
 
-        <WizardFooter
-          onBack={() => router.back()}
-          onNext={onSave}
-          nextLabel='Cast on'
-          nextDisabled={!canSave}
-        />
-      </ScrollView>
+        <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
+          <WizardFooter
+            onBack={() => router.back()}
+            onNext={onSave}
+            nextLabel='Cast on'
+            nextDisabled={!canSave}
+          />
+        </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.bg, paddingHorizontal: 22 },
-  content: { paddingTop: 24, paddingBottom: 24 },
+  screen: { flex: 1, backgroundColor: color.bg },
+  content: { paddingHorizontal: 22, paddingBottom: 24 },
+  footer: { paddingHorizontal: 22, paddingTop: 4, backgroundColor: color.bg },
 
   pillRow: { flexDirection: 'row', gap: 12, marginBottom: 14 },
   datePill: {

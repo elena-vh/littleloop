@@ -39,7 +39,13 @@ export default function WizardFooter({
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', gap: 12, marginTop: 22 },
+  row: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: color.divider,
+  },
   btn: {
     minHeight: 52,
     borderRadius: radius.pill,

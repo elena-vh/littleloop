@@ -44,16 +44,16 @@ export default function ProjectBasicsScreen() {
   };
 
   return (
-    <View
-      style={[
-        styles.screen,
-        { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 },
-      ]}>
+    <View style={styles.screen}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
-          contentContainerStyle={styles.content}
+          style={{ flex: 1 }}
+          contentContainerStyle={[
+            styles.content,
+            { paddingTop: insets.top + 20 },
+          ]}
           keyboardShouldPersistTaps='handled'
           showsVerticalScrollIndicator={false}>
           <WizardHeader step={1} title='Project basics' />
@@ -98,7 +98,9 @@ export default function ProjectBasicsScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.patternHint}>PDF or photo, max 500 kb</Text>
               </View>
-              <Pressable style={styles.uploadBtn} accessibilityLabel='Upload pattern'>
+              <Pressable
+                style={styles.uploadBtn}
+                accessibilityLabel='Upload pattern'>
                 <Upload size={20} strokeWidth={2.75} color={color.acc[800]} />
               </Pressable>
             </View>
@@ -114,22 +116,29 @@ export default function ProjectBasicsScreen() {
               keyboardType='url'
             />
           </Field>
+        </ScrollView>
 
+        <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
           <WizardFooter
             onBack={() => router.back()}
             onNext={onContinue}
             nextLabel='Continue'
             nextDisabled={!canContinue}
           />
-        </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.bg, paddingHorizontal: 22 },
-  content: { paddingTop: 24, paddingBottom: 24 },
+  screen: { flex: 1, backgroundColor: color.bg },
+  content: { paddingHorizontal: 22, paddingBottom: 24 },
+  footer: {
+    paddingHorizontal: 22,
+    paddingTop: 4,
+    backgroundColor: color.bg,
+  },
   nameInput: {
     fontFamily: font.heading,
     fontSize: 20,
