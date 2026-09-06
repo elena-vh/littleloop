@@ -1,4 +1,3 @@
-// src/screens/MaterialsScreen.tsx
 import React, { useMemo, useState } from 'react';
 import {
   View,
@@ -7,51 +6,39 @@ import {
   Pressable,
   StyleSheet,
   ScrollView,
-  Platform,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ChevronRight, Check, Plus, Minus } from 'lucide-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useProjectDraft } from '@src/store/projectDraft';
-import WizardHeader from './WizardHeader';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const YARNS = [
-  'Schachenmayr Pink 100% Cotton 50g',
-  'Schachenmayr Blue 100% Cotton 50g',
-  'Schachenmayr Green 100% Cotton 50g',
-];
+import { color, font, radius } from '@src/theme/theme';
+import { useProjectDraft } from '@src/store/projectDraft';
+import { useYarn } from '@src/store/yarn';
+import WizardHeader from './WizardHeader';
+import WizardFooter from './WizardFooter';
+import Field, { fieldStyles } from './Field';
+import YarnSwatch from '@src/components/ui/YarnSwatch';
 
 export default function MaterialsScreen() {
   const insets = useSafeAreaInsets();
   const { craft } = useLocalSearchParams<{ craft?: 'crochet' | 'knitting' }>();
   const setMaterials = useProjectDraft((s) => s.setMaterials);
+  const yarns = useYarn((s) => s.yarns);
 
-  const [yarnQuery, setYarnQuery] = useState('Schachenmayr Pin');
-  const [yarnSelected, setYarnSelected] = useState<string | null>(null);
-  const [yarnFocused, setYarnFocused] = useState(false);
+  const [yarnId, setYarnId] = useState<string | undefined>(yarns[0]?.id);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [tools, setTools] = useState('');
+  const [skeins, setSkeins] = useState(1);
 
-  const [tools, setTools] = useState('4.5mm circular needles');
-  const [skeins, setSkeins] = useState('10');
-  const [yarn, setYarn] = useState('');
-  const filtered = useMemo(() => {
-    const q = yarnQuery.trim().toLowerCase();
-    if (!q) return YARNS;
-    return YARNS.filter((y) => y.toLowerCase().includes(q));
-  }, [yarnQuery]);
-  console.log({ yarnQuery });
-  const showDropdown = yarnFocused && filtered.length > 0;
+  const selected = useMemo(
+    () => yarns.find((y) => y.id === yarnId),
+    [yarns, yarnId]
+  );
+
   const onContinue = () => {
-    setMaterials({
-      yarnId: yarnQuery,
-      tools,
-      skeins: Number(skeins || 0),
-    });
-
-    router.push({
-      pathname: '/create-project/plan-track',
-      params: { craft }, // carry it forward
-    });
+    setMaterials({ yarnId, tools, skeins });
+    router.push({ pathname: '/create-project/plan-track', params: { craft } });
   };
-  const onBack = () => router.back();
 
   return (
     <View
@@ -59,222 +46,154 @@ export default function MaterialsScreen() {
         styles.screen,
         { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 },
       ]}>
-      <WizardHeader step={2} />
-
       <ScrollView
         contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps='handled'>
-        <Text style={styles.title}>Materials</Text>
+        keyboardShouldPersistTaps='handled'
+        showsVerticalScrollIndicator={false}>
+        <WizardHeader step={2} title='Materials' />
 
-        {/* Yarn */}
-        <View style={styles.card}>
-          <Text style={styles.label}>Yarn</Text>
-
-          <View style={styles.searchRow}>
-            <Text style={styles.searchIcon}>⌕</Text>
-            <TextInput
-              value={yarnSelected ?? yarnQuery}
-              onChangeText={(t) => {
-                setYarnSelected(null);
-                setYarnQuery(t);
-                setYarn(t);
-              }}
-              onFocus={() => setYarnFocused(true)}
-              onBlur={() => {
-                // small delay helps tapping a suggestion without losing it immediately
-                setTimeout(() => setYarnFocused(false), 80);
-              }}
-              placeholder='Search yarn'
-              placeholderTextColor='#999'
-              style={styles.searchInput}
+        <Field label='Yarn from your stash'>
+          <Pressable
+            style={styles.yarnRow}
+            onPress={() => setPickerOpen((v) => !v)}>
+            {selected ? (
+              <>
+                <YarnSwatch color={selected.swatch} size={38} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={styles.yarnName} numberOfLines={1}>
+                    {selected.brand}
+                  </Text>
+                  <Text style={styles.yarnMeta} numberOfLines={1}>
+                    {selected.colorway} · {selected.weight} · {selected.skeins} left
+                  </Text>
+                </View>
+              </>
+            ) : (
+              <Text style={[styles.yarnName, { flex: 1 }]}>Choose a yarn</Text>
+            )}
+            <ChevronRight
+              size={18}
+              strokeWidth={2.75}
+              color={color.neutral[600]}
             />
-          </View>
-        </View>
+          </Pressable>
 
-        {showDropdown && (
-          <View style={styles.dropdown}>
-            {filtered.slice(0, 5).map((item, idx) => {
-              const highlighted = idx === 0; // matches screenshot vibe
-              return (
+          {pickerOpen && (
+            <View style={styles.picker}>
+              {yarns.map((y) => (
                 <Pressable
-                  key={item}
+                  key={y.id}
+                  style={styles.pickerItem}
                   onPress={() => {
-                    setYarnSelected(item);
-                    setYarnFocused(false);
-                  }}
-                  style={[
-                    styles.dropdownItem,
-                    highlighted && styles.dropdownItemHighlighted,
-                  ]}>
-                  <Text style={styles.dropdownText}>{item}</Text>
+                    setYarnId(y.id);
+                    setPickerOpen(false);
+                  }}>
+                  <YarnSwatch color={y.swatch} size={28} />
+                  <Text style={styles.pickerText} numberOfLines={1}>
+                    {y.brand} · {y.colorway}
+                  </Text>
+                  {y.id === yarnId && (
+                    <Check size={16} strokeWidth={3} color={color.accent} />
+                  )}
                 </Pressable>
-              );
-            })}
-          </View>
-        )}
+              ))}
+            </View>
+          )}
+        </Field>
 
-        {/* Tools */}
-        <View style={styles.card}>
-          <Text style={styles.label}>Tools</Text>
+        <Field label='Tools'>
           <TextInput
             value={tools}
             onChangeText={setTools}
-            style={styles.inputBig}
-            placeholder='e.g. 4.5mm circular needles'
-            placeholderTextColor='#999'
+            style={fieldStyles.input}
+            placeholder='e.g. 4.5 mm circular needles'
+            placeholderTextColor={color.neutral[600]}
           />
-        </View>
+        </Field>
 
-        {/* Number of skeins */}
-        <View style={styles.card}>
-          <Text style={styles.label}>Number of skeins</Text>
-          <TextInput
-            value={skeins}
-            onChangeText={setSkeins}
-            style={styles.inputBig}
-            placeholder='0'
-            placeholderTextColor='#999'
-            keyboardType='number-pad'
-          />
-        </View>
+        <Field label='Number of skeins'>
+          <View style={styles.stepper}>
+            <Pressable
+              style={styles.stepMinus}
+              onPress={() => setSkeins((n) => Math.max(1, n - 1))}
+              accessibilityLabel='Fewer skeins'>
+              <Minus size={22} strokeWidth={2.75} color={color.text} />
+            </Pressable>
+            <Text style={styles.stepCount}>{skeins}</Text>
+            <Pressable
+              style={styles.stepPlus}
+              onPress={() => setSkeins((n) => n + 1)}
+              accessibilityLabel='More skeins'>
+              <Plus size={22} strokeWidth={2.75} color={color.bg} />
+            </Pressable>
+          </View>
+        </Field>
 
-        <View style={{ height: 28 }} />
-
-        <View style={styles.buttonsRow}>
-          <Pressable
-            onPress={onBack}
-            style={[styles.btn, styles.btnGhost]}
-            accessibilityRole='button'>
-            <Text style={styles.btnGhostText}>Back</Text>
-          </Pressable>
-
-          <Pressable
-            onPress={onContinue}
-            style={[styles.btn, styles.btnPrimary]}
-            accessibilityRole='button'>
-            <Text style={styles.btnPrimaryText}>Continue</Text>
-          </Pressable>
-        </View>
+        <WizardFooter
+          onBack={() => router.back()}
+          onNext={onContinue}
+          nextLabel='Continue'
+        />
       </ScrollView>
     </View>
   );
 }
 
-const CARD_RADIUS = 18;
-
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: '#FFF',
-    paddingHorizontal: 22,
-  },
-  content: {
-    paddingTop: 24,
-    paddingBottom: 24,
-  },
-  title: {
-    textAlign: 'center',
-    marginBottom: 24,
-    fontSize: 20,
-    fontWeight: '700',
-    fontFamily: Platform.select({
-      ios: 'Georgia',
-      android: 'serif',
-      //   default: 'Fraunces',
-    }),
-    // fontFamily: 'Fraunces_700Bold',
-    color: '#111',
-  },
+  screen: { flex: 1, backgroundColor: color.bg, paddingHorizontal: 22 },
+  content: { paddingTop: 24, paddingBottom: 24 },
 
-  card: {
-    borderWidth: 1,
-    borderColor: '#E6E6E6',
-    borderRadius: CARD_RADIUS,
-    padding: 16,
-    marginBottom: 14,
-    backgroundColor: '#FFF',
-  },
-  label: {
+  yarnRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  yarnName: { fontFamily: font.heading, fontSize: 16, color: color.text },
+  yarnMeta: {
+    fontFamily: font.body,
     fontSize: 12,
-    fontWeight: '700',
-    color: '#1A1A1A',
-    marginBottom: 8,
+    color: color.neutral[700],
+    marginTop: 2,
   },
-
-  searchRow: {
+  picker: {
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: color.divider,
+    paddingTop: 8,
+    gap: 4,
+  },
+  pickerItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    paddingVertical: 4,
+    paddingVertical: 8,
   },
-  searchIcon: {
-    fontSize: 18,
-    color: '#222',
-    marginTop: -2,
-  },
-  searchInput: {
+  pickerText: {
     flex: 1,
-    fontSize: 16,
-    color: '#111',
-    paddingVertical: 6,
+    fontFamily: font.body,
+    fontSize: 13.5,
+    color: color.text,
   },
 
-  dropdown: {
-    marginTop: -6,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: '#E6E6E6',
-    borderRadius: CARD_RADIUS,
-    overflow: 'hidden',
-    backgroundColor: '#FFF',
-  },
-  dropdownItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  dropdownItemHighlighted: {
-    backgroundColor: '#F2F2F2',
-  },
-  dropdownText: {
-    fontSize: 15,
-    color: '#333',
-  },
-
-  inputBig: {
-    fontSize: 16,
-    color: '#111',
-    paddingVertical: 6,
-  },
-
-  buttonsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 14,
-    paddingTop: 6,
-  },
-  btn: {
-    flex: 1,
-    height: 54,
-    borderRadius: 999,
+  stepper: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  stepMinus: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.pill,
+    borderWidth: 2,
+    borderColor: color.divider,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  btnGhost: {
-    borderWidth: 1,
-    borderColor: '#E6E6E6',
-    backgroundColor: '#FFF',
+  stepPlus: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.pill,
+    backgroundColor: color.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  btnGhostText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111',
-  },
-  btnPrimary: {
-    backgroundColor: '#111',
-  },
-  btnPrimaryText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFF',
+  stepCount: {
+    flex: 1,
+    textAlign: 'center',
+    fontFamily: font.heading,
+    fontSize: 32,
+    color: color.text,
   },
 });

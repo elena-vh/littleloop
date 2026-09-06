@@ -1,117 +1,49 @@
-// src/components/WizardHeader.tsx
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-
-type Props = {
-  step: 1 | 2 | 3;
-  onStepPress?: (step: 1 | 2 | 3) => void;
-  rightIcon?: React.ReactNode;
-  onRightPress?: () => void;
-};
+import { View, Text, StyleSheet } from 'react-native';
+import { color, font, radius } from '@src/theme/theme';
 
 export default function WizardHeader({
   step,
-  onStepPress,
-  rightIcon,
-  onRightPress,
-}: Props) {
-  const steps: Array<1 | 2 | 3> = [1, 2, 3];
-
+  title,
+}: {
+  step: 1 | 2 | 3;
+  title: string;
+}) {
   return (
-    <View style={styles.row}>
-      <View style={styles.stepper}>
-        {steps.map((s, idx) => {
-          const isActive = s <= step;
-          const isCurrent = s === step;
-
-          return (
-            <React.Fragment key={s}>
-              {/* <Pressable
-                onPress={() => onStepPress?.(s)}
-                hitSlop={10}
-                style={[
-                  styles.circle,
-                  isActive ? styles.circleActive : styles.circleInactive,
-                ]}
-                accessibilityRole='button'
-                accessibilityLabel={`Step ${s}`}>
-                <Text
-                  style={[
-                    styles.circleText,
-                    isActive
-                      ? styles.circleTextActive
-                      : styles.circleTextInactive,
-                  ]}>
-                  {s}
-                </Text>
-              </Pressable> */}
-
-              {idx < steps.length && (
-                <View
-                  style={[
-                    styles.line,
-                    idx < step ? styles.lineActive : styles.lineInactive,
-                  ]}
-                />
-              )}
-            </React.Fragment>
-          );
-        })}
+    <View>
+      <View style={styles.bar}>
+        {[1, 2, 3].map((s) => (
+          <View
+            key={s}
+            style={[
+              styles.seg,
+              { backgroundColor: s <= step ? color.acc2[600] : color.neutral[300] },
+            ]}
+          />
+        ))}
       </View>
-
-      {/* <Pressable
-        onPress={onRightPress}
-        hitSlop={10}
-        style={styles.rightIconWrap}
-        accessibilityRole='button'
-        accessibilityLabel='Wizard options'>
-        {rightIcon ?? <Text style={styles.rightIconFallback}>🎉</Text>}
-      </Pressable> */}
+      <Text style={styles.kicker}>Step {step} of 3 · new project</Text>
+      <Text style={styles.title}>{title}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  bar: { flexDirection: 'row', gap: 7, marginBottom: 22 },
+  seg: { flex: 1, height: 7, borderRadius: radius.pill },
+  kicker: {
+    fontFamily: font.bodySemi,
+    fontSize: 10.5,
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
+    color: color.acc[700],
+    marginBottom: 6,
   },
-  stepper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    paddingRight: 12,
+  title: {
+    fontFamily: font.heading,
+    fontSize: 28,
+    lineHeight: 31,
+    color: color.text,
+    marginBottom: 22,
   },
-  circle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  circleActive: { backgroundColor: '#111' },
-  circleInactive: { backgroundColor: '#E6E6E6' },
-  circleText: { fontSize: 12, fontWeight: '700' },
-  circleTextActive: { color: '#FFF' },
-  circleTextInactive: { color: '#666' },
-
-  line: {
-    height: 5,
-    borderRadius: 2,
-    flex: 1,
-    marginHorizontal: 2,
-  },
-  lineActive: { backgroundColor: '#53721F' },
-  lineInactive: { backgroundColor: '#E6E6E6' },
-
-  rightIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#E6E6E6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  rightIconFallback: { fontSize: 14 },
 });

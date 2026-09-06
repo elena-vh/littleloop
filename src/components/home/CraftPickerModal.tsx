@@ -1,9 +1,10 @@
 import React from 'react';
 import { Modal, View, Pressable, Text, StyleSheet } from 'react-native';
+import { X } from 'lucide-react-native';
 import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { color, font, radius } from '@src/theme/theme';
 
-// NOTE: not yet on the Organic system — restyled with the add-project flow.
-// Kept functional so project creation still works from Home.
 export default function CraftPickerModal({
   visible,
   onClose,
@@ -11,6 +12,8 @@ export default function CraftPickerModal({
   visible: boolean;
   onClose: () => void;
 }) {
+  const insets = useSafeAreaInsets();
+
   const go = (craft: 'crochet' | 'knitting') => {
     onClose();
     requestAnimationFrame(() => {
@@ -22,23 +25,29 @@ export default function CraftPickerModal({
   };
 
   return (
-    <Modal visible={visible} transparent animationType='fade'>
-      <View style={styles.backdrop}>
-        <View style={styles.surface}>
-          <View style={styles.cardsRow}>
-            <Pressable style={styles.card} onPress={() => go('crochet')}>
-              <Text style={styles.cardTitle}>Crochet</Text>
+    <Modal visible={visible} transparent animationType='fade' onRequestClose={onClose}>
+      <Pressable style={styles.backdrop} onPress={onClose}>
+        <Pressable
+          style={[styles.sheet, { paddingBottom: insets.bottom + 20 }]}
+          onPress={(e) => e.stopPropagation()}>
+          <View style={styles.grabber} />
+          <View style={styles.headRow}>
+            <Text style={styles.title}>New project</Text>
+            <Pressable onPress={onClose} hitSlop={10} style={styles.close}>
+              <X size={18} strokeWidth={2.75} color={color.text} />
             </Pressable>
+          </View>
+          <Text style={styles.kicker}>Pick a craft to start</Text>
+          <View style={styles.row}>
             <Pressable style={styles.card} onPress={() => go('knitting')}>
               <Text style={styles.cardTitle}>Knitting</Text>
             </Pressable>
+            <Pressable style={styles.card} onPress={() => go('crochet')}>
+              <Text style={styles.cardTitle}>Crochet</Text>
+            </Pressable>
           </View>
-
-          <Pressable onPress={onClose} style={styles.closeFab} hitSlop={12}>
-            <Text style={{ fontSize: 22 }}>✕</Text>
-          </Pressable>
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }
@@ -46,50 +55,55 @@ export default function CraftPickerModal({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: 'rgba(32,30,29,0.35)',
+    justifyContent: 'flex-end',
   },
-  surface: {
-    width: 800,
-    marginTop: 200,
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-    borderTopLeftRadius: 450,
-    borderTopRightRadius: 450,
-    paddingTop: 32,
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
+  sheet: {
+    backgroundColor: color.bg,
+    borderTopLeftRadius: radius.cardLg,
+    borderTopRightRadius: radius.cardLg,
+    paddingHorizontal: 22,
+    paddingTop: 10,
   },
-  cardsRow: { flexDirection: 'row', gap: 16, marginBottom: 26 },
+  grabber: {
+    alignSelf: 'center',
+    width: 40,
+    height: 5,
+    borderRadius: radius.pill,
+    backgroundColor: color.neutral[300],
+    marginBottom: 16,
+  },
+  headRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  title: { fontFamily: font.heading, fontSize: 22, color: color.text },
+  close: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.pill,
+    backgroundColor: color.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  kicker: {
+    fontFamily: font.bodySemi,
+    fontSize: 10,
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
+    color: color.acc[700],
+    marginTop: 6,
+    marginBottom: 14,
+  },
+  row: { flexDirection: 'row', gap: 12 },
   card: {
-    width: 130,
-    height: 70,
-    backgroundColor: 'white',
-    borderRadius: 18,
-    padding: 14,
-    alignItems: 'center',
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 4,
-  },
-  cardTitle: {
-    fontFamily: 'Quicksand_600SemiBold',
-    fontWeight: '800',
-    letterSpacing: 0.5,
-    color: '#707070',
-  },
-  closeFab: {
-    position: 'absolute',
-    bottom: 30,
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: '#ddd',
+    flex: 1,
+    minHeight: 96,
+    borderRadius: radius.card,
+    backgroundColor: color.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  cardTitle: { fontFamily: font.heading, fontSize: 18, color: color.text },
 });
