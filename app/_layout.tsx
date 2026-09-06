@@ -35,6 +35,14 @@ import {
   Fraunces_800ExtraBold,
   Fraunces_900Black,
 } from '@expo-google-fonts/fraunces';
+
+// Organic redesign faces — Caprasimo for display/numbers, Figtree for everything else.
+import { Caprasimo_400Regular } from '@expo-google-fonts/caprasimo';
+import {
+  Figtree_400Regular,
+  Figtree_600SemiBold,
+  Figtree_700Bold,
+} from '@expo-google-fonts/figtree';
 import { ThemeProvider } from '@src/theme/ThemeProvider';
 import { migrate } from '@src/db/migrate';
 import { useTasks } from '@src/store/tasks';
@@ -67,6 +75,10 @@ export default function RootLayout() {
     Mulish_600SemiBold,
     Mulish_700Bold,
     Mulish_800ExtraBold,
+    Caprasimo_400Regular,
+    Figtree_400Regular,
+    Figtree_600SemiBold,
+    Figtree_700Bold,
   });
 
   useEffect(() => {
