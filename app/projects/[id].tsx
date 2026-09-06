@@ -1,237 +1,440 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Pressable,
   ScrollView,
-  Platform,
+  Alert,
+  Image,
 } from 'react-native';
-import OnHold from '@assets/icons/on_hold.svg';
-import * as ImagePicker from 'expo-image-picker';
-
-import Done from '@assets/icons/done.svg';
-import Planned from '@assets/icons/planned.svg';
-import InProgress from '@assets/icons/in_progress.svg';
+import {
+  ChevronLeft,
+  MoreVertical,
+  Plus,
+  FileText,
+} from 'lucide-react-native';
 import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as ImagePicker from 'expo-image-picker';
+import { randomUUID } from 'expo-crypto';
+
+import { color, font, radius, HIT } from '@src/theme/theme';
+import Tag from '@src/components/ui/Tag';
+import StitchTexture from '@src/components/ui/StitchTexture';
+import {
+  PhotoRef,
+  Project,
+  deleteProject,
+  getProjectById,
+} from '@src/db/projectsRepo';
+import {
+  getProjectSecondsThisWeek,
+  getProjectSecondsToday,
+  getProjectTotalSeconds,
+} from '@src/db/sessionsRepo';
 import {
   addProgressPic,
   listProgressPicsByProject,
+  type ProgressPic,
 } from '@src/db/progressPicsRepo';
 import { persistPickedImage } from '@src/lib/persistImage';
-import { Image } from 'react-native';
-
-import ChevronLeft from '@assets/icons/chevron_left.svg';
-import MoreIcon from '@assets/icons/more_vertical.svg';
-import { PhotoRef, Project, getProjectById } from '@src/db/projectsRepo';
-import { SoftPulseTimer } from '@src/components/ui/CraftingTimer';
 import {
-  getProjectLastSession,
-  getProjectSecondsThisWeek,
-  getProjectSecondsToday,
-  getProjectStreakDays,
-  getProjectTotalSeconds,
-} from '@src/db/sessionsRepo';
-import { ProgressPicsSection } from '@src/components/ui/ProgressPicsSection';
-import { ProgressPic } from '@src/db/progressPicsRepo';
-import { randomUUID } from 'expo-crypto';
+  useProgress,
+  projectPercent,
+  PRIMARY_COUNTER,
+  type Counter,
+} from '@src/store/progress';
 
-export default function ProjectDetailsScreen() {
-  type Status = 'On hold' | 'In progress' | 'Planned' | 'Done';
+const TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-  // TEMP: later load from project / computed from counters
-  const status: Status = 'In progress';
-  const progress = 0.4; // later: currentRows / targetRows
-  const currentRows = Math.round(progress * 250);
-  const targetRows = 250;
-  type LastSession = { endedAt: string; durationSeconds: number };
+type Status = 'Planned' | 'In progress' | 'Done';
 
-  const [totalSeconds, setTotalSeconds] = React.useState(0);
-  const [todaySeconds, setTodaySeconds] = React.useState(0);
-  const [weekSeconds, setWeekSeconds] = React.useState(0);
-  const [streakDays, setStreakDays] = React.useState(0);
-  const [lastSession, setLastSession] = React.useState<LastSession | null>(
-    null
-  );
-  const [progressPics, setProgressPics] = React.useState<ProgressPic[]>([]);
+function parseTarget(s?: string | null): number {
+  if (!s) return 0;
+  const n = parseInt(String(s).replace(/[^0-9]/g, ''), 10);
+  return Number.isFinite(n) ? n : 0;
+}
 
+function daysLeft(endDate?: string | null): number | null {
+  if (!endDate) return null;
+  const ms = new Date(endDate).getTime() - Date.now();
+  return Math.ceil(ms / 86_400_000);
+}
+
+function fmtDuration(totalSeconds: number) {
+  const s = Math.max(0, Math.floor(totalSeconds));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (h <= 0 && m <= 0) return '0m';
+  if (h <= 0) return `${m}m`;
+  return `${h}h ${String(m).padStart(2, '0')}m`;
+}
+
+function fmtDate(iso?: string | null) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+  });
+}
+
+export default function ProjectDetailScreen() {
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [project, setProject] = React.useState<Project | null>(null);
-  // const totalSeconds = getProjectTotalSeconds(project?.id);
+
+  const [project, setProject] = useState<Project | null>(null);
+  const [pics, setPics] = useState<ProgressPic[]>([]);
+  const [time, setTime] = useState({ total: 0, today: 0, week: 0 });
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const counters = useProgress((s) => s.counters);
+  const setCounter = useProgress((s) => s.setCounter);
+
+  const load = useCallback(async () => {
+    if (!id) return;
+    const p = await getProjectById(id);
+    setProject(p);
+    if (!p) return;
+    setPics(listProgressPicsByProject(p.id, 12));
+    setTime({
+      total: getProjectTotalSeconds(p.id),
+      today: getProjectSecondsToday(p.id, TZ),
+      week: getProjectSecondsThisWeek(p.id, TZ),
+    });
+    // Seed the primary counter's total from the project target so the counter
+    // screen has something real to count towards.
+    const target = parseTarget(p.targetMeasurement);
+    const existing = counters[p.id]?.[PRIMARY_COUNTER];
+    if (target > 0 && (!existing || existing.total !== target)) {
+      setCounter(p.id, PRIMARY_COUNTER, { total: target });
+    }
+  }, [id]);
+
   useFocusEffect(
-    React.useCallback(() => {
-      let alive = true;
-
-      (async () => {
-        if (!id) return;
-
-        const p = await getProjectById(id);
-        if (!alive) return;
-        setProject(p);
-
-        if (!p) return;
-
-        // These come from your sessions repo (implement next)
-        const tz = 'Europe/Bucharest';
-
-        const total = getProjectTotalSeconds(p.id);
-        const today = getProjectSecondsToday(p.id, tz);
-        const week = getProjectSecondsThisWeek(p.id, tz);
-        const streak = getProjectStreakDays(p.id, tz);
-        const last = getProjectLastSession(p.id);
-        if (p) {
-          const pics = listProgressPicsByProject(p.id, 50);
-          setProgressPics(pics);
-        }
-        if (!alive) return;
-        setTotalSeconds(total);
-        setTodaySeconds(today);
-        setWeekSeconds(week);
-        setStreakDays(streak);
-        setLastSession(last);
-      })();
-
-      return () => {
-        alive = false;
-      };
-    }, [id])
+    useCallback(() => {
+      load();
+    }, [load])
   );
+
+  const handleDelete = () => {
+    setMenuOpen(false);
+    if (!project) return;
+    Alert.alert('Delete project?', "This can't be undone.", [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          deleteProject(project.id);
+          router.back();
+        },
+      },
+    ]);
+  };
+
+  const pct = project ? projectPercent(counters, project.id) : 0;
+  const pctLabel = `${Math.round(pct * 100)}%`;
+  const primary: Counter | undefined = project
+    ? counters[project.id]?.[PRIMARY_COUNTER]
+    : undefined;
+  const target = parseTarget(project?.targetMeasurement);
+  const dl = daysLeft(project?.endDate);
+
+  const status: Status = !project?.startDate
+    ? 'Planned'
+    : pct >= 1
+    ? 'Done'
+    : 'In progress';
+  const STATUS_TINT: Record<Status, string> = {
+    Planned: color.neutral[400],
+    'In progress': color.acc2[600],
+    Done: color.acc2[700],
+  };
+
+  const projectCounters = project ? counters[project.id] ?? {} : {};
+  const counterNames = Object.keys(projectCounters);
+  const shownCounters = counterNames.length
+    ? counterNames
+    : [PRIMARY_COUNTER];
+
+  const openCounter = (name: string) =>
+    project &&
+    router.push({
+      pathname: '/counter/[id]',
+      params: { id: project.id, counter: name },
+    });
+
+  const addPic = async () => {
+    if (!project) return;
+    await pickAndSaveProgressPic(project.id);
+    setPics(listProgressPicsByProject(project.id, 12));
+  };
 
   return (
     <View style={styles.root}>
-      {/* White “sheet” that scrolls */}
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}>
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: 56, paddingBottom: 28 + insets.bottom },
+        ]}>
+        {/* header */}
         <View style={styles.header}>
           <Pressable
             onPress={() => router.back()}
             style={styles.iconBtn}
-            hitSlop={10}>
-            <ChevronLeft width={18} height={18} />
+            hitSlop={8}>
+            <ChevronLeft size={20} strokeWidth={2.75} color={color.text} />
           </Pressable>
-
-          <Text style={styles.title} numberOfLines={1}>
-            {project?.name || 'Project'}
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            {project?.name ?? 'Project'}
           </Text>
-
-          <Pressable onPress={() => {}} style={styles.iconBtn} hitSlop={10}>
-            <MoreIcon width={18} height={18} />
+          <Pressable
+            onPress={() => setMenuOpen((v) => !v)}
+            style={styles.iconBtn}
+            hitSlop={8}>
+            <MoreVertical size={20} strokeWidth={2.75} color={color.text} />
           </Pressable>
         </View>
 
-        <CoverCardReadonly
-          status={status}
-          imageUri={project?.photos?.[0]?.uri ?? ''}
-          startLabel='1 Sep'
-          endLabel='1 Oct'
-          current={currentRows}
-          target={targetRows}
-        />
-        <View style={styles.aboutYarn}>
-          <Text style={styles.text}>Yarn</Text>
-          {project?.yarnId ? (
-            <Text style={styles.subtitle}>{project?.yarnId}</Text>
+        {/* status card */}
+        <View style={styles.statusCard}>
+          <View style={styles.statusRow}>
+            <View
+              style={[styles.statusDot, { backgroundColor: STATUS_TINT[status] }]}
+            />
+            <Text style={styles.statusText}>{status}</Text>
+            {dl != null && (
+              <View style={{ marginLeft: 'auto' }}>
+                <Tag
+                  label={dl >= 0 ? `${dl} days left` : `${-dl} days over`}
+                  variant='neutral'
+                />
+              </View>
+            )}
+          </View>
+
+          {project?.photos?.[0]?.uri ? (
+            <Image
+              source={{ uri: project.photos[0].uri }}
+              style={styles.photo}
+            />
           ) : (
-            <Text style={styles.subtitle}>
-              No yarn chosen yet. Let's pick your colors!
+            <StitchTexture
+              from={color.neutral[800]}
+              to={color.neutral[200]}
+              band={11}
+              style={styles.photo}
+            />
+          )}
+
+          <View style={styles.sliderWrap}>
+            <View style={styles.track}>
+              <View style={[styles.trackFill, { width: `${pct * 100}%` }]} />
+              <View style={[styles.knob, { left: `${pct * 100}%` }]} />
+            </View>
+            <View style={styles.sliderMeta}>
+              <Text style={styles.date}>{fmtDate(project?.startDate)}</Text>
+              <Text style={styles.pctBig}>{pctLabel}</Text>
+              <Text style={styles.date}>{fmtDate(project?.endDate)}</Text>
+            </View>
+            <Text style={styles.rowsMeta}>
+              {primary
+                ? `${primary.current} of ${primary.total} rows`
+                : target > 0
+                ? `0 of ${target} rows`
+                : 'No target set'}
             </Text>
-          )}
-        </View>
-        <View style={styles.pattern}>
-          <Text style={styles.text}>Pattern</Text>
-          {project?.patternLink ? (
-            <View>
-              <Text style={styles.subtitle}>{project?.patternLink}</Text>
-            </View>
-          ) : (
-            <Text style={styles.subtitle}>No pattern chosen yet. </Text>
-          )}
+          </View>
         </View>
 
-        <View style={styles.pattern}>
-          <Text style={styles.text}>Crafting Time</Text>
-
-          <View style={styles.timeCard}>
-            <Text style={styles.timeBig}>{formatDuration(totalSeconds)}</Text>
-            <Text style={styles.timeLabel}>Total crafting time</Text>
-
-            <View style={styles.timeRow}>
-              <TimeStat label='Today' value={formatDuration(todaySeconds)} />
-              <TimeStat label='This week' value={formatDuration(weekSeconds)} />
-              {streakDays > 0 ? (
-                <TimeStat label='Streak' value={`${streakDays}d`} />
-              ) : null}
-            </View>
-
-            <View style={styles.lastSessionRow}>
-              <Text style={styles.lastSessionLabel}>Last session</Text>
-              <Text style={styles.lastSessionValue}>
-                {lastSession
-                  ? `${formatDuration(
-                      lastSession.durationSeconds
-                    )} · ${formatWhen(lastSession.endedAt)}`
-                  : 'No sessions yet'}
+        {/* materials */}
+        <Text style={styles.h4}>Materials</Text>
+        <View style={styles.grid}>
+          <View style={styles.tile}>
+            <Text style={styles.kicker}>Yarn</Text>
+            <View style={styles.yarnRow}>
+              <View style={styles.yarnDot} />
+              <Text style={styles.tileValue} numberOfLines={1}>
+                {project?.yarnId ?? 'Not set'}
               </Text>
             </View>
+          </View>
+          <View style={styles.tile}>
+            <Text style={styles.kicker}>Tools</Text>
+            <Text style={styles.tileValue}>{project?.tools ?? 'Not set'}</Text>
+          </View>
+          <View style={styles.tile}>
+            <Text style={styles.kicker}>Skeins</Text>
+            <Text style={styles.tileValue}>
+              {project?.skeins != null ? String(project.skeins) : '—'}
+            </Text>
+          </View>
+          <View style={styles.tile}>
+            <Text style={styles.kicker}>Target</Text>
+            <Text style={styles.tileValue}>
+              {project?.targetMeasurement ?? '—'}
+            </Text>
+          </View>
+        </View>
 
-            {/* Optional: navigation to your working screen */}
+        {/* pattern */}
+        <View style={styles.sectionHead}>
+          <Text style={styles.h4}>Pattern</Text>
+          {(project?.patternFile || project?.patternLink) && (
             <Pressable
-              style={styles.timeCta}
               onPress={() =>
                 router.push({
-                  pathname: '/projects/[id]/work',
-                  params: { id: project?.id },
+                  pathname: '/pattern/[id]',
+                  params: { id: project!.id },
                 })
-              }
-              disabled={!project?.id}>
-              <Text style={styles.timeCtaText}>Work on this project</Text>
+              }>
+              <Text style={styles.ghost}>Open</Text>
+            </Pressable>
+          )}
+        </View>
+        <Pressable
+          style={styles.patternCard}
+          onPress={() =>
+            project &&
+            router.push({
+              pathname: '/pattern/[id]',
+              params: { id: project.id },
+            })
+          }>
+          <View style={styles.patternIcon}>
+            <FileText size={19} strokeWidth={2.75} color={color.acc[800]} />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={styles.patternName} numberOfLines={1}>
+              {project?.patternFile?.name ??
+                project?.patternLink ??
+                'No pattern yet'}
+            </Text>
+            <Text style={styles.patternSub} numberOfLines={1}>
+              {project?.patternFile
+                ? 'PDF attached'
+                : project?.patternLink
+                ? 'Linked'
+                : 'Add one from project settings'}
+            </Text>
+          </View>
+        </Pressable>
+
+        {/* crafting time */}
+        <Text style={styles.h4}>Crafting time</Text>
+        <View style={styles.timeCard}>
+          <View style={styles.timeTopRow}>
+            <Text style={styles.timeBig}>{fmtDuration(time.total)}</Text>
+            <Text style={styles.timeBigLabel}>total on this project</Text>
+          </View>
+          <View style={styles.timeTiles}>
+            <View style={styles.timeTile}>
+              <Text style={styles.timeTileLabel}>Today</Text>
+              <Text style={styles.timeTileValue}>{fmtDuration(time.today)}</Text>
+            </View>
+            <View style={styles.timeTile}>
+              <Text style={styles.timeTileLabel}>This week</Text>
+              <Text style={styles.timeTileValue}>{fmtDuration(time.week)}</Text>
+            </View>
+          </View>
+          <Pressable
+            style={({ pressed }) => [
+              styles.primaryBtn,
+              pressed && styles.primaryBtnPressed,
+            ]}
+            onPress={() => openCounter(PRIMARY_COUNTER)}>
+            <Text style={styles.primaryBtnText}>Work on this project</Text>
+          </Pressable>
+        </View>
+
+        {/* counters */}
+        <View style={styles.sectionHead}>
+          <Text style={styles.h4}>Counters</Text>
+          <Pressable
+            style={styles.smallAdd}
+            onPress={() => openCounter(PRIMARY_COUNTER)}
+            accessibilityLabel='Add counter'>
+            <Plus size={19} strokeWidth={2.75} color={color.text} />
+          </Pressable>
+        </View>
+        <View style={styles.counterRow}>
+          {shownCounters.map((name) => {
+            const c = projectCounters[name] ?? { current: 0, total: target };
+            return (
+              <Pressable
+                key={name}
+                style={styles.counterCard}
+                onPress={() => openCounter(name)}>
+                <Text style={styles.kicker}>{name}</Text>
+                <Text style={styles.counterCount}>{c.current}</Text>
+                <Text style={styles.counterOf}>
+                  of {c.total || target || '—'} rows
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* progress pics */}
+        <View style={styles.sectionHead}>
+          <Text style={styles.h4}>Progress pics</Text>
+          <Pressable
+            style={styles.smallAdd}
+            onPress={addPic}
+            accessibilityLabel='Add photo'>
+            <Plus size={19} strokeWidth={2.75} color={color.text} />
+          </Pressable>
+        </View>
+        <View style={styles.picsRow}>
+          {pics.slice(0, 3).map((p) => (
+            <Image
+              key={p.id}
+              source={{ uri: p.photo.uri }}
+              style={styles.picSlot}
+            />
+          ))}
+          {pics.length < 3 && (
+            <Pressable style={styles.picAdd} onPress={addPic}>
+              <Plus size={20} strokeWidth={2.75} color={color.neutral[600]} />
+            </Pressable>
+          )}
+        </View>
+      </ScrollView>
+
+      {menuOpen && (
+        <>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => setMenuOpen(false)}
+          />
+          <View style={[styles.menu, { top: insets.top + 46 }]}>
+            <Pressable
+              onPress={() => setMenuOpen(false)}
+              style={styles.menuItem}>
+              <Text style={styles.menuText}>Edit</Text>
+            </Pressable>
+            <View style={styles.menuDivider} />
+            <Pressable onPress={handleDelete} style={styles.menuItem}>
+              <Text style={[styles.menuText, styles.menuDanger]}>Delete</Text>
             </Pressable>
           </View>
-        </View>
-
-        <View style={styles.rowCounters}>
-          <Text style={styles.text}>Row Counters</Text>
-          <View style={styles.counterCard}>
-            <Text style={styles.counterText}>Sleeves</Text>
-          </View>
-          {/* <Text style={styles.subtitle}>No counters yet - want me to keep count for you? </Text>} */}
-        </View>
-
-        <ProgressPicsSection
-          photos={progressPics ?? []}
-          onAddPress={async () => {
-            if (!project) return;
-
-            await pickAndSaveProgressPic(project.id);
-
-            setProgressPics(listProgressPicsByProject(project.id, 1));
-            // TODO: navigate to your add-photo flow
-            // router.push({ pathname: "/projects/[id]/add-progress-pic", params: { id: project?.id } });
-          }}
-          onEditPress={(photoId) => {
-            // TODO: navigate to edit screen (caption, delete, etc.)
-            // router.push({ pathname: "/projects/[id]/edit-progress-pic", params: { id: project?.id, photoId } });
-          }}
-        />
-      </ScrollView>
+        </>
+      )}
     </View>
   );
 }
+
 async function pickAndSaveProgressPic(projectId: string) {
   const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (!perm.granted) return;
-
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ['images'],
-    allowsMultipleSelection: true,
-    selectionLimit: 6,
     quality: 0.8,
   });
   if (result.canceled) return;
-
   const asset = result.assets[0];
-
   const photo: PhotoRef = {
     id: randomUUID(),
     uri: persistPickedImage(asset.uri, asset.mimeType),
@@ -239,388 +442,265 @@ async function pickAndSaveProgressPic(projectId: string) {
     width: asset.width,
     height: asset.height,
   };
-
-  addProgressPic({
-    id: randomUUID(),
-    projectId,
-    photo,
-  });
-}
-function TimeStat({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.timeStat}>
-      <Text style={styles.timeStatLabel}>{label}</Text>
-      <Text style={styles.timeStatValue}>{value}</Text>
-    </View>
-  );
-}
-function formatDuration(totalSeconds: number) {
-  const s = Math.max(0, Math.floor(totalSeconds));
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-
-  if (h <= 0 && m <= 0) return '0m';
-  if (h <= 0) return `${m}m`;
-  return `${h}h ${m}m`;
-}
-
-function formatWhen(iso: string) {
-  // keep it simple; later you can do better with date-fns
-  const d = new Date(iso);
-  const now = new Date();
-
-  const sameDay =
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate();
-
-  if (sameDay) return 'Today';
-
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-
-  const isYesterday =
-    d.getFullYear() === yesterday.getFullYear() &&
-    d.getMonth() === yesterday.getMonth() &&
-    d.getDate() === yesterday.getDate();
-
-  if (isYesterday) return 'Yesterday';
-
-  return d.toLocaleDateString();
+  addProgressPic({ id: randomUUID(), projectId, photo });
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    marginTop: 50,
-  },
-  timeCard: {
-    marginTop: 10,
-    borderRadius: 18,
-    backgroundColor: '#FFFFFF',
-    padding: 14,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 3,
-  },
-  timeBig: {
-    fontSize: 34,
-    fontFamily: 'Quicksand_700Bold',
-    color: '#111827',
-  },
-  timeLabel: {
-    marginTop: 4,
-    fontSize: 12,
-    fontFamily: 'Quicksand_500Medium',
-    color: '#6B7280',
-  },
-  timeRow: {
-    marginTop: 14,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
-  timeStat: {
-    flex: 1,
-    borderRadius: 14,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    backgroundColor: '#F9FAFB',
-  },
-  timeStatLabel: {
-    fontSize: 12,
-    fontFamily: 'Quicksand_600SemiBold',
-    color: '#6B7280',
-  },
-  timeStatValue: {
-    marginTop: 6,
-    fontSize: 16,
-    fontFamily: 'Quicksand_700Bold',
-    color: '#111827',
-  },
-  lastSessionRow: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#E5E7EB',
-  },
-  lastSessionLabel: {
-    fontSize: 12,
-    fontFamily: 'Quicksand_600SemiBold',
-    color: '#6B7280',
-  },
-  lastSessionValue: {
-    marginTop: 6,
-    fontSize: 14,
-    fontFamily: 'Quicksand_600SemiBold',
-    color: '#111827',
-  },
-  timeCta: {
-    marginTop: 12,
-    height: 44,
-    borderRadius: 999,
-    backgroundColor: '#111827',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  timeCtaText: {
-    fontSize: 14,
-    fontFamily: 'Quicksand_700Bold',
-    color: '#FFFFFF',
-  },
-  counterCard: {
-    borderRadius: 18,
-    width: 100,
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 100,
-    backgroundColor: '#FFFFFF',
-    padding: 12,
-    marginTop: 6,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOpacity: 0.08,
-        shadowRadius: 12,
-        shadowOffset: { width: 0, height: 6 },
-      },
-      android: { elevation: 4 },
-      default: {},
-    }),
-  },
-  content: {
-    minHeight: '100%',
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 26,
-    borderTopRightRadius: 26,
-    paddingTop: 10,
-    paddingHorizontal: 16,
-    paddingBottom: 24,
-  },
+  root: { flex: 1, backgroundColor: color.bg },
+  content: { paddingHorizontal: 16 },
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginBottom: 10,
-  },
-  aboutYarn: {
-    display: 'flex',
-    marginTop: 20,
-    gap: 10,
-  },
-  pattern: {
-    display: 'flex',
-    marginTop: 20,
-    gap: 10,
-  },
-  rowCounters: {
-    display: 'flex',
-    marginTop: 20,
-    gap: 10,
-  },
-  text: {
-    fontFamily: 'Quicksand_700Bold',
-    fontSize: 18,
-  },
-  subtitle: {
-    fontFamily: 'Quicksand_400Regular',
-    color: '#545454',
-    fontSize: 14,
-  },
-  counterText: {
-    fontFamily: 'Quicksand_600SemiBold',
-    color: '#545454',
-    fontSize: 14,
+    marginBottom: 12,
   },
   iconBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 12,
-    backgroundColor: '#F3F4F6',
+    width: HIT,
+    height: HIT,
+    borderRadius: radius.pill,
+    backgroundColor: color.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: {
+  headerTitle: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#111827',
-    fontFamily: 'Fraunces_500Medium',
+    fontFamily: font.heading,
+    fontSize: 17,
+    color: color.text,
   },
-  placeholder: {
-    marginTop: 12,
-    borderRadius: 16,
+
+  statusCard: {
+    backgroundColor: color.surface,
+    borderRadius: radius.cardLg,
     padding: 16,
-    backgroundColor: '#F9FAFB',
   },
-});
-function CoverCardReadonly({
-  status,
-  imageUri,
-  startLabel,
-  endLabel,
-  current,
-  target,
-}: {
-  status: 'On hold' | 'In progress' | 'Planned' | 'Done';
-  imageUri: string;
-  startLabel: string; // "1 Sep"
-  endLabel: string; // "1 Oct"
-  current: number; // e.g. 100 rows
-  target: number; // e.g. 250 rows
-}) {
-  const progress = target <= 0 ? 0 : Math.max(0, Math.min(1, current / target));
-  const pct = Math.round(progress * 100);
-
-  return (
-    <View style={cover.card}>
-      <View style={cover.topRow}>
-        <StatusPill label={status} />
-      </View>
-
-      <Image source={{ uri: imageUri }} style={cover.image} />
-
-      <View style={cover.progressRow}>
-        <Text style={cover.date}>{startLabel}</Text>
-
-        <View style={{ flex: 1, alignItems: 'center' }}>
-          <View style={cover.bar}>
-            <View style={[cover.fill, { width: `${pct}%` }]} />
-            <View style={[cover.knob, { left: `${pct}%` }]} />
-          </View>
-
-          <Text style={cover.pct}>{pct}%</Text>
-          <Text style={cover.meta}>
-            ({current} / {target} rows)
-          </Text>
-        </View>
-
-        <Text style={cover.date}>{endLabel}</Text>
-      </View>
-    </View>
-  );
-}
-const STATUS_CONFIG = {
-  'On hold': {
-    Icon: OnHold,
-  },
-  'In progress': {
-    Icon: InProgress,
-  },
-  'Planned': {
-    Icon: Planned,
-  },
-  'Done': { Icon: Done },
-};
-function StatusPill({
-  label,
-}: {
-  label: 'On hold' | 'In progress' | 'Planned' | 'Done';
-}) {
-  const { Icon } = STATUS_CONFIG[label];
-
-  return (
-    <View style={cover.statusPill}>
-      <Icon width={14} height={14} />
-      <Text style={cover.statusText}>{label}</Text>
-    </View>
-  );
-}
-
-const cover = StyleSheet.create({
-  card: {
-    borderRadius: 18,
-    backgroundColor: '#FFFFFF',
-    padding: 12,
-    marginTop: 6,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOpacity: 0.08,
-        shadowRadius: 12,
-        shadowOffset: { width: 0, height: 6 },
-      },
-      android: { elevation: 4 },
-      default: {},
-    }),
-  },
-  topRow: {
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  statusPill: {
-    paddingVertical: 7,
-    borderRadius: 999,
-    justifyContent: 'flex-start',
-    // backgroundColor: '#111827',
-    display: 'flex',
-    flexDirection: 'row',
-    gap: 10,
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    alignContent: 'flex-start',
-  },
-  statusText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#000',
-    textAlign: 'left',
-
-    fontFamily: 'Quicksand_800ExtraBold',
-  },
-  image: {
-    width: '100%',
-    height: 120,
-    borderRadius: 14,
-    backgroundColor: '#E5E7EB',
-  },
-  progressRow: {
-    marginTop: 20,
+  statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 9,
+    marginBottom: 14,
   },
-  date: {
-    width: 42,
-    textAlign: 'center',
-    fontSize: 12,
-    color: '#6B7280',
+  statusDot: { width: 26, height: 26, borderRadius: radius.pill },
+  statusText: { fontFamily: font.heading, fontSize: 15, color: color.text },
+  photo: {
+    height: 176,
+    borderRadius: 24,
+    backgroundColor: color.neutral[200],
   },
-  bar: {
-    width: '100%',
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: '#E5E7EB',
-    position: 'relative',
+  sliderWrap: { marginTop: 18, paddingHorizontal: 4 },
+  track: {
+    height: 10,
+    borderRadius: radius.pill,
+    backgroundColor: color.neutral[300],
+    justifyContent: 'center',
   },
-  fill: {
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: '#111827',
+  trackFill: {
+    height: 10,
+    borderRadius: radius.pill,
+    backgroundColor: color.acc2[600],
   },
   knob: {
     position: 'absolute',
-    top: -5,
-    marginLeft: -7,
-    width: 18,
-    height: 18,
-    borderRadius: 999,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#111827',
+    marginLeft: -13,
+    width: 26,
+    height: 26,
+    borderRadius: radius.pill,
+    backgroundColor: color.bg,
+    borderWidth: 3,
+    borderColor: color.acc2[700],
   },
-  pct: {
-    marginTop: 8,
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#111827',
+  sliderMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    marginTop: 14,
   },
-  meta: {
+  date: { fontFamily: font.body, fontSize: 11.5, color: color.neutral[700] },
+  pctBig: { fontFamily: font.heading, fontSize: 17, color: color.text },
+  rowsMeta: {
+    textAlign: 'center',
+    fontFamily: font.body,
+    fontSize: 11.5,
+    color: color.neutral[700],
     marginTop: 2,
-    fontSize: 11,
-    color: '#6B7280',
   },
+
+  h4: {
+    fontFamily: font.heading,
+    fontSize: 18,
+    color: color.text,
+    marginTop: 24,
+    marginBottom: 10,
+  },
+  sectionHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 24,
+    marginBottom: 10,
+  },
+  ghost: { fontFamily: font.bodySemi, fontSize: 13, color: color.accent },
+
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 10,
+  },
+  tile: {
+    width: '48.5%',
+    backgroundColor: color.surface,
+    borderRadius: 22,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  kicker: {
+    fontFamily: font.bodySemi,
+    fontSize: 10,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    color: color.acc[700],
+    marginBottom: 5,
+  },
+  tileValue: { fontFamily: font.body, fontSize: 13.5, color: color.text },
+  yarnRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  yarnDot: {
+    width: 16,
+    height: 16,
+    borderRadius: radius.pill,
+    backgroundColor: color.neutral[400],
+  },
+
+  patternCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 13,
+    backgroundColor: color.surface,
+    borderRadius: 22,
+    padding: 15,
+  },
+  patternIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: color.acc[100],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  patternName: { fontFamily: font.body, fontSize: 13.5, color: color.text },
+  patternSub: {
+    fontFamily: font.body,
+    fontSize: 11.5,
+    color: color.neutral[700],
+    marginTop: 2,
+  },
+
+  timeCard: {
+    backgroundColor: color.acc2[200],
+    borderRadius: 28,
+    padding: 18,
+  },
+  timeTopRow: { flexDirection: 'row', alignItems: 'baseline', gap: 9 },
+  timeBig: {
+    fontFamily: font.heading,
+    fontSize: 34,
+    lineHeight: 36,
+    color: color.acc2[900],
+  },
+  timeBigLabel: { fontFamily: font.body, fontSize: 12, color: color.acc2[900] },
+  timeTiles: { flexDirection: 'row', gap: 10, marginTop: 14 },
+  timeTile: {
+    flex: 1,
+    backgroundColor: 'rgba(245,234,216,0.72)',
+    borderRadius: 18,
+    paddingVertical: 11,
+    paddingHorizontal: 14,
+  },
+  timeTileLabel: {
+    fontFamily: font.body,
+    fontSize: 11,
+    color: color.neutral[700],
+  },
+  timeTileValue: {
+    fontFamily: font.heading,
+    fontSize: 17,
+    color: color.text,
+    marginTop: 2,
+  },
+  primaryBtn: {
+    marginTop: 16,
+    minHeight: 48,
+    borderRadius: radius.pill,
+    backgroundColor: color.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryBtnPressed: { backgroundColor: color.acc[600] },
+  primaryBtnText: {
+    fontFamily: font.bodySemi,
+    fontSize: 15,
+    color: color.bg,
+  },
+
+  smallAdd: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.pill,
+    backgroundColor: color.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  counterRow: { flexDirection: 'row', gap: 12 },
+  counterCard: {
+    flex: 1,
+    backgroundColor: color.surface,
+    borderRadius: 26,
+    padding: 16,
+  },
+  counterCount: {
+    fontFamily: font.heading,
+    fontSize: 30,
+    lineHeight: 35,
+    color: color.text,
+    marginVertical: 2,
+    textTransform: 'capitalize',
+  },
+  counterOf: {
+    fontFamily: font.body,
+    fontSize: 11.5,
+    color: color.neutral[700],
+  },
+
+  picsRow: { flexDirection: 'row', gap: 10 },
+  picSlot: {
+    flex: 1,
+    height: 84,
+    borderRadius: 20,
+    backgroundColor: color.neutral[200],
+  },
+  picAdd: {
+    flex: 1,
+    height: 84,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: color.neutral[400],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  menu: {
+    position: 'absolute',
+    right: 16,
+    minWidth: 160,
+    backgroundColor: color.surface,
+    borderRadius: radius.md,
+    overflow: 'hidden',
+  },
+  menuItem: { paddingVertical: 13, paddingHorizontal: 16 },
+  menuText: { fontFamily: font.bodySemi, fontSize: 15, color: color.text },
+  menuDanger: { color: color.accent },
+  menuDivider: { height: 1, backgroundColor: color.divider },
 });
