@@ -1,6 +1,4 @@
-// app/(tabs)/projects.tsx
 import React, { useCallback, useMemo, useState } from 'react';
-import HeaderShape from '@assets/header.svg';
 import {
   View,
   Text,
@@ -9,448 +7,313 @@ import {
   Pressable,
   FlatList,
   Image,
-  Platform,
-  Dimensions,
-  ActivityIndicator,
+  ScrollView,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { Search, SlidersHorizontal, Plus } from 'lucide-react-native';
+import { useFocusEffect, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors } from '@src/theme/tokens';
 
-const TAB_BAR_HEIGHT = 80;
+import { color, font, radius } from '@src/theme/theme';
+import { listProjects, type Project } from '@src/db/projectsRepo';
+import { useProgress, projectPercent } from '@src/store/progress';
+import Tag from '@src/components/ui/Tag';
+import CraftPickerModal from '@src/components/home/CraftPickerModal';
 
-import { listProjects } from '@src/db/projectsRepo';
-import type { Project } from '@src/db/projectsRepo';
-import NoProjects from '@app/screens/Projects/NoProjects';
+type Filter = 'all' | 'knitting' | 'crochet' | 'gifts';
+const FILTERS: { key: Filter; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'knitting', label: 'Knit' },
+  { key: 'crochet', label: 'Crochet' },
+  { key: 'gifts', label: 'Gifts' },
+];
 
-type UiProject = {
-  id: string;
-  title: string;
-  imageUrl?: string;
-  chips: string[];
-};
-
-function getFirstPhotoUri(photos: any[] | undefined) {
-  const first = photos?.[0];
-  return (
-    first?.uri ?? first?.localUri ?? first?.path ?? first?.url ?? undefined
-  );
-}
-
-function craftToLabel(craft: any) {
-  if (!craft) return '';
-  if (typeof craft === 'string') return craft;
-  return craft?.name ?? String(craft);
-}
-
-function mapDbToUi(p: Project): UiProject {
-  const chips = [craftToLabel(p.craft), ...(p.tags ?? [])]
-    .filter(Boolean)
-    .slice(0, 3);
-
-  return {
-    id: p.id,
-    title: p.name ?? 'Untitled',
-    imageUrl: getFirstPhotoUri(p.photos),
-    chips,
-  };
-}
-
-export default function ProjectsScreen() {
-  const router = useRouter();
-
-  const insets = useSafeAreaInsets();
-  const [query, setQuery] = useState('');
-  const [projects, setProjects] = useState<UiProject[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  const loadProjects = useCallback(async () => {
-    try {
-      setLoading(true);
-      setErrorMsg(null);
-
-      const rows = await listProjects(); // ✅ sqlite
-      setProjects((rows ?? []).map(mapDbToUi));
-    } catch (e: any) {
-      console.log('listProjects failed:', e);
-      setErrorMsg('Couldn’t load projects.');
-      setProjects([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      loadProjects();
-    }, [loadProjects])
-  );
-  console.log(projects);
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return projects;
-    return projects.filter((p) => p.title.toLowerCase().includes(q));
-  }, [projects, query]);
-
-  const onPressProject = (p: UiProject) => {
-    // TODO: route to project details
-    console.log('open project', p.id);
-    // router.push(`/projects/${p.id}`);
-  };
-
-  const onPressFilter = () => {
-    console.log('filter');
-  };
-
-  const onPressAdd = () => {
-    console.log('add project');
-    // router.push("/projects/new");
-  };
-
-  return (
-    <>
-      {projects.length === 0 ? (
-        <NoProjects />
-      ) : (
-        <View style={styles.screen}>
-          {/* soft background blocks */}
-          <HeaderShape
-            width='100%'
-            height={240}
-            style={[styles.bgTop, { top: -50 }]}
-            preserveAspectRatio='xMidYMid slice'
-          />
-          {/* Title */}
-          <View style={styles.header}>
-            <Text style={styles.title}>Projects</Text>
-          </View>
-
-          {/* Main surface */}
-          <View style={styles.surface}>
-            {/* Search + filter */}
-            <View style={styles.searchRow}>
-              <View style={styles.searchBox}>
-                <Ionicons name='search' size={18} color='rgba(0,0,0,0.45)' />
-                <TextInput
-                  value={query}
-                  onChangeText={setQuery}
-                  placeholder='Search projects'
-                  placeholderTextColor='rgba(0,0,0,0.35)'
-                  style={styles.searchInput}
-                  returnKeyType='search'
-                />
-              </View>
-
-              <Pressable
-                onPress={onPressFilter}
-                hitSlop={10}
-                style={({ pressed }) => [
-                  styles.filterButton,
-                  pressed && styles.pressed,
-                ]}>
-                <Ionicons name='filter' size={18} color='rgba(0,0,0,0.75)' />
-              </Pressable>
-            </View>
-
-            {/* Grid */}
-            {loading ? (
-              <View style={styles.center}>
-                <ActivityIndicator />
-              </View>
-            ) : errorMsg ? (
-              <View style={styles.center}>
-                <Text style={styles.errorText}>{errorMsg}</Text>
-                <Pressable
-                  onPress={loadProjects}
-                  style={({ pressed }) => [
-                    styles.retry,
-                    pressed && styles.pressed,
-                  ]}>
-                  <Text style={styles.retryText}>Retry</Text>
-                </Pressable>
-              </View>
-            ) : (
-              <FlatList
-                data={filtered}
-                keyExtractor={(item) => item.id}
-                numColumns={2}
-                columnWrapperStyle={styles.column}
-                contentContainerStyle={[
-                  styles.listContent,
-                  { paddingBottom: TAB_BAR_HEIGHT + insets.bottom },
-                ]}
-                showsVerticalScrollIndicator={false}
-                renderItem={({ item }) => (
-                  <ProjectCard
-                    project={item}
-                    onPress={() => onPressProject(item)}
-                  />
-                )}
-                ListEmptyComponent={
-                  <View style={styles.center}>
-                    <Text style={styles.emptyTitle}>No projects yet</Text>
-                    <Text style={styles.emptySub}>
-                      Tap + to add your first one.
-                    </Text>
-                  </View>
-                }
-              />
-            )}
-          </View>
-
-          {/* FAB */}
-          <Pressable
-            onPress={onPressAdd}
-            hitSlop={10}
-            style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}>
-            <Ionicons name='add' size={30} color='#fff' />
-          </Pressable>
-        </View>
-      )}
-    </>
-  );
-}
+const TINTS: [string, string][] = [
+  [color.acc2[300], color.acc2[800]],
+  [color.acc[200], color.acc[800]],
+  [color.neutral[300], color.neutral[700]],
+  [color.acc2[200], color.acc2[700]],
+];
 
 function ProjectCard({
   project,
+  index,
   onPress,
 }: {
-  project: UiProject;
+  project: Project;
+  index: number;
   onPress: () => void;
 }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
-      <View style={styles.imageWrap}>
-        {project.imageUrl ? (
-          <Image source={{ uri: project.imageUrl }} style={styles.image} />
-        ) : (
-          <View style={styles.imagePlaceholder} />
-        )}
+  const counters = useProgress((s) => s.counters);
+  const pct = Math.round(projectPercent(counters, project.id) * 100);
+  const photo = project.photos?.[0]?.uri;
+  const [block, ink] = TINTS[index % TINTS.length];
+  const tags = [project.craft, ...(project.tags ?? [])].filter(Boolean).slice(0, 2);
 
-        <View pointerEvents='none' style={styles.heartGhost}>
-          <Ionicons
-            name='heart-outline'
-            size={18}
-            color='rgba(255,255,255,0.85)'
-          />
+  return (
+    <Pressable style={styles.card} onPress={onPress}>
+      <View style={styles.thumb}>
+        {photo ? (
+          <Image source={{ uri: photo }} style={styles.photo} />
+        ) : (
+          <View style={[StyleSheet.absoluteFill, styles.block, { backgroundColor: block }]}>
+            <Text style={[styles.monogram, { color: ink }]}>
+              {project.name.trim().charAt(0).toUpperCase() || '·'}
+            </Text>
+          </View>
+        )}
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{pct}%</Text>
         </View>
       </View>
 
-      <View style={styles.cardBody}>
-        <Text numberOfLines={1} style={styles.cardTitle}>
-          {project.title}
-        </Text>
-
-        <View style={styles.chipsRow}>
-          {project.chips.slice(0, 2).map((t) => (
-            <View key={t} style={styles.chip}>
-              <Text numberOfLines={1} style={styles.chipText}>
-                {t}
-              </Text>
-            </View>
-          ))}
-          {project.chips.length > 2 && (
-            <View style={styles.chip}>
-              <Text style={styles.chipText}>
-                +{project.chips.length - 2}
-              </Text>
-            </View>
-          )}
-        </View>
+      <Text style={styles.name} numberOfLines={2}>
+        {project.name}
+      </Text>
+      <View style={styles.tags}>
+        {tags.map((t, i) => (
+          <Tag
+            key={`${t}-${i}`}
+            label={String(t)}
+            variant={i === 0 ? 'accent2' : 'neutral'}
+          />
+        ))}
       </View>
     </Pressable>
   );
 }
 
-const GAP = 8;
-const PAD = 16;
-const { width: W } = Dimensions.get('window');
-const CARD_W = (W - PAD * 2 - GAP) / 2;
+export default function ProjectsScreen() {
+  const insets = useSafeAreaInsets();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<Filter>('all');
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      setProjects(listProjects());
+    }, [])
+  );
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return projects.filter((p) => {
+      if (q && !p.name.toLowerCase().includes(q)) return false;
+      if (filter === 'all') return true;
+      if (filter === 'gifts')
+        return (p.tags ?? []).some((t) => t.toLowerCase().includes('gift'));
+      return p.craft === filter;
+    });
+  }, [projects, query, filter]);
+
+  const count = projects.length;
+
+  return (
+    <View style={styles.root}>
+      <View style={[styles.head, { paddingTop: 64 }]}>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>Projects</Text>
+          <Pressable
+            onPress={() => setPickerOpen(true)}
+            style={styles.addBtn}
+            accessibilityLabel='Add project'>
+            <Plus size={20} strokeWidth={2.75} color={color.acc[800]} />
+          </Pressable>
+        </View>
+        <Text style={styles.count}>
+          {count} {count === 1 ? 'project' : 'on the needles'}
+        </Text>
+
+        <View style={styles.searchRow}>
+          <View style={styles.searchBox}>
+            <Search size={18} strokeWidth={2.75} color={color.neutral[700]} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder='Search projects'
+              placeholderTextColor={color.neutral[600]}
+              style={styles.searchInput}
+              returnKeyType='search'
+            />
+          </View>
+          <Pressable style={styles.filterBtn} accessibilityLabel='Filter'>
+            <SlidersHorizontal
+              size={20}
+              strokeWidth={2.75}
+              color={color.neutral[700]}
+            />
+          </Pressable>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chips}>
+          {FILTERS.map((f) => {
+            const active = filter === f.key;
+            return (
+              <Pressable key={f.key} onPress={() => setFilter(f.key)}>
+                <Tag
+                  label={f.label}
+                  variant={active ? 'solid' : 'neutral'}
+                  size={12.5}
+                />
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
+
+      <FlatList
+        data={filtered}
+        keyExtractor={(p) => p.id}
+        numColumns={2}
+        columnWrapperStyle={styles.column}
+        contentContainerStyle={[
+          styles.list,
+          { paddingBottom: 28 + insets.bottom + 60 },
+        ]}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item, index }) => (
+          <ProjectCard
+            project={item}
+            index={index}
+            onPress={() => router.push(`/projects/${item.id}`)}
+          />
+        )}
+        ListEmptyComponent={
+          <Pressable style={styles.empty} onPress={() => setPickerOpen(true)}>
+            <Text style={styles.emptyTitle}>Nothing on the needles</Text>
+            <Text style={styles.emptySub}>Tap to cast on your first project</Text>
+          </Pressable>
+        }
+      />
+
+      <CraftPickerModal
+        visible={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+      />
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#FFF' },
-
-  bgTop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-  },
-  bgBottom: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 280,
-    backgroundColor: '#EFEAD5',
-  },
-
-  header: {
-    paddingTop: 50,
-    paddingHorizontal: PAD,
-    paddingBottom: 10,
-    alignItems: 'flex-start',
+  root: { flex: 1, backgroundColor: color.bg },
+  head: { paddingHorizontal: 22 },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   title: {
-    fontSize: 26,
-    color: '#111',
-    fontFamily: 'Fraunces_600SemiBold',
+    fontFamily: font.heading,
+    fontSize: 30,
+    lineHeight: 34,
+    color: color.text,
   },
-
-  surface: {
-    flex: 1,
-    paddingHorizontal: PAD,
-  },
-
-  searchRow: {
-    flexDirection: 'row',
+  addBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.pill,
+    backgroundColor: color.acc[100],
     alignItems: 'center',
-    gap: 12,
-    marginTop: 60,
-    marginBottom: 12,
+    justifyContent: 'center',
   },
+  count: {
+    fontFamily: font.body,
+    fontSize: 12.5,
+    color: color.neutral[700],
+    marginTop: 4,
+    marginBottom: 18,
+  },
+  searchRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
   searchBox: {
     flex: 1,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.08)',
+    minHeight: 48,
+    borderRadius: radius.pill,
+    backgroundColor: color.surface,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    gap: 8,
+    gap: 10,
+    paddingHorizontal: 16,
   },
   searchInput: {
     flex: 1,
-    height: 44,
-    fontSize: 15,
-    color: '#111',
+    fontFamily: font.body,
+    fontSize: 14.5,
+    color: color.text,
   },
-  filterButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.08)',
+  filterBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.pill,
+    backgroundColor: color.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
-
-  listContent: { paddingBottom: 20 },
-  column: { gap: GAP, marginBottom: GAP },
-
-  card: {
-    width: CARD_W,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.06)',
+  chips: { gap: 8, paddingBottom: 20, paddingRight: 22 },
+  list: { paddingHorizontal: 22, paddingTop: 4 },
+  column: { gap: 16, marginBottom: 16 },
+  card: { flex: 1 },
+  thumb: {
+    height: 150,
+    borderRadius: radius.photo,
     overflow: 'hidden',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOpacity: 0.06,
-        shadowRadius: 14,
-        shadowOffset: { width: 0, height: 8 },
-      },
-      android: { elevation: 2 },
-      default: {},
-    }),
+    backgroundColor: color.neutral[200],
   },
-  cardPressed: { transform: [{ scale: 0.99 }], opacity: 0.96 },
-
-  imageWrap: {
-    height: 120,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.04)',
+  photo: {
+    ...StyleSheet.absoluteFill,
+    resizeMode: 'cover',
   },
-  image: { width: '100%', height: '100%', borderRadius: 20 },
-  imagePlaceholder: {
-    width: '100%',
-    borderRadius: 20,
-    height: '100%',
+  block: { alignItems: 'center', justifyContent: 'center' },
+  monogram: {
+    fontFamily: font.headingBlack,
+    fontSize: 64,
+    opacity: 0.6,
   },
-
-  heartGhost: {
+  badge: {
     position: 'absolute',
-    right: 10,
-    bottom: 10,
-    width: 30,
-    height: 30,
-    borderRadius: 999,
-    backgroundColor: 'rgba(0,0,0,0.14)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    left: 8,
+    bottom: 8,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: radius.sm,
+    backgroundColor: color.acc2[800],
   },
-
-  cardBody: { padding: 12, gap: 8 },
-  cardTitle: {
-    fontSize: 14,
-    fontFamily: 'Mulish_600SemiBold',
-    color: '#111',
-  },
-
-  chipsRow: { flexDirection: 'row', gap: 6, flexWrap: 'nowrap' },
-  chip: {
-    height: 22,
-    paddingHorizontal: 8,
-    borderRadius: 999,
-    backgroundColor: 'rgba(0,0,0,0.04)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 1,
-  },
-  chipText: {
+  badgeText: {
+    fontFamily: font.bodySemi,
     fontSize: 11,
-    fontFamily: 'Mulish_400Regular',
-    color: 'rgba(0,0,0,0.5)',
+    color: color.bg,
   },
-
-  fab: {
-    position: 'absolute',
-    right: 22,
-    bottom: 34,
-    width: 72,
-    height: 72,
-    borderRadius: 999,
-    backgroundColor: colors.terracotta,
+  name: {
+    fontFamily: font.heading,
+    fontSize: 15,
+    lineHeight: 18,
+    color: color.text,
+    marginTop: 10,
+    marginBottom: 7,
+  },
+  tags: { flexDirection: 'row', gap: 5, flexWrap: 'wrap' },
+  empty: {
+    marginTop: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOpacity: 0.18,
-        shadowRadius: 18,
-        shadowOffset: { width: 0, height: 10 },
-      },
-      android: { elevation: 8 },
-      default: {},
-    }),
+    gap: 6,
   },
-  fabPressed: { transform: [{ scale: 0.98 }], opacity: 0.9 },
-
-  pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
-
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
-  emptyTitle: { fontSize: 16, fontWeight: '800', color: '#111' },
-  emptySub: { fontSize: 13, fontWeight: '600', color: 'rgba(0,0,0,0.5)' },
-
-  errorText: { fontSize: 13, fontWeight: '700', color: 'rgba(0,0,0,0.55)' },
-  retry: {
-    height: 40,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  emptyTitle: {
+    fontFamily: font.heading,
+    fontSize: 20,
+    color: color.text,
   },
-  retryText: { fontSize: 13, fontWeight: '800', color: '#111' },
+  emptySub: {
+    fontFamily: font.body,
+    fontSize: 12.5,
+    color: color.acc2[900],
+    marginTop: 6,
+    backgroundColor: color.bg,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    overflow: 'hidden',
+  },
 });

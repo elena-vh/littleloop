@@ -41,6 +41,31 @@ const msUntilNextBoundary = (now = new Date()) => {
   return tomorrow5.getTime() - now.getTime();
 };
 
+export const greetingParts = (date = new Date(), name?: string) => {
+  const p = periodFromHour(date.getHours());
+  const base =
+    p === 'morning'
+      ? 'Good morning'
+      : p === 'afternoon'
+      ? 'Good afternoon'
+      : p === 'evening'
+      ? 'Good evening'
+      : 'Good night';
+  return { line1: name ? `${base},` : base, line2: name ?? '' };
+};
+
+export const useGreetingParts = (name?: string) => {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setTimeout(
+      () => setNow(new Date()),
+      msUntilNextBoundary(new Date())
+    );
+    return () => clearTimeout(id);
+  });
+  return useMemo(() => greetingParts(now, name), [now, name]);
+};
+
 export const useGreeting = (name?: string) => {
   const [now, setNow] = useState(() => new Date());
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

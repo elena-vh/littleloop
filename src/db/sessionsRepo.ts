@@ -242,6 +242,37 @@ export function getProjectStreakDays(
   return streak;
 }
 
+export function getGlobalStreakDays(timeZone: string): number {
+  const rows = db.getAllSync<{ ended_at: string }>(
+    `SELECT ended_at
+     FROM project_sessions
+     WHERE deleted_at IS NULL
+       AND ended_at IS NOT NULL
+       AND duration_seconds > 0
+     ORDER BY ended_at DESC
+     LIMIT 400`
+  );
+
+  if (!rows?.length) return 0;
+
+  const activeDays = new Set<string>();
+  for (const r of rows) {
+    activeDays.add(formatYMD(new Date(r.ended_at), timeZone));
+  }
+
+  let streak = 0;
+  let cursor = parseYMD(formatYMD(new Date(), timeZone));
+  while (true) {
+    const key = `${cursor.y}-${String(cursor.m).padStart(2, '0')}-${String(
+      cursor.d
+    ).padStart(2, '0')}`;
+    if (!activeDays.has(key)) break;
+    streak += 1;
+    cursor = addDaysToYMD(cursor, -1);
+  }
+  return streak;
+}
+
 /* -------------------- (optional) session writing API -------------------- */
 
 export function startSession(input: {

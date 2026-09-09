@@ -1,7 +1,4 @@
-// src/screens/ProjectBasicsScreen.tsx
 import React, { useMemo, useState } from 'react';
-import { router, useLocalSearchParams } from 'expo-router';
-
 import {
   View,
   Text,
@@ -12,327 +9,188 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import { X, Upload } from 'lucide-react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import WizardHeader from './WizardHeader';
+
+import { color, font, radius } from '@src/theme/theme';
 import { useProjectDraft } from '@src/store/projectDraft';
-import { listProjects } from '@src/db/projectsRepo';
+import WizardHeader from './WizardHeader';
+import WizardFooter from './WizardFooter';
+import Field, { fieldStyles } from './Field';
 
 export default function ProjectBasicsScreen() {
   const insets = useSafeAreaInsets();
   const { craft } = useLocalSearchParams<{ craft?: 'crochet' | 'knitting' }>();
   const setBasics = useProjectDraft((s) => s.setBasics);
 
-  const [projectName, setProjectName] = useState('');
+  const [name, setName] = useState('');
   const [tagDraft, setTagDraft] = useState('');
-  const [tags, setTags] = useState<string[]>(['gift']);
+  const [tags, setTags] = useState<string[]>([]);
   const [patternLink, setPatternLink] = useState('');
-  const onBack = () => router.back();
-  console.log('ALL PROJECTS:', listProjects());
 
-  const onContinue = () => {
-    setBasics({
-      craft,
-      name: projectName,
-      tags,
-      patternLink,
-    });
-    router.push({
-      pathname: '/create-project/materials',
-      params: { craft }, // carry it forward
-    });
-  };
-
-  const canContinue = useMemo(
-    () => projectName.trim().length > 0,
-    [projectName]
-  );
+  const canContinue = useMemo(() => name.trim().length > 0, [name]);
 
   const addTag = () => {
     const v = tagDraft.trim();
-    if (!v) return;
-    if (tags.includes(v)) {
-      setTagDraft('');
-      return;
-    }
-    setTags((prev) => [...prev, v]);
+    if (!v || tags.includes(v)) return setTagDraft('');
+    setTags((p) => [...p, v]);
     setTagDraft('');
   };
 
-  const removeTag = (t: string) =>
-    setTags((prev) => prev.filter((x) => x !== t));
+  const onContinue = () => {
+    setBasics({ craft, name, tags, patternLink });
+    router.push({ pathname: '/create-project/materials', params: { craft } });
+  };
 
   return (
-    <View
-      style={[
-        styles.screen,
-        { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 },
-      ]}>
-      <WizardHeader step={1} />
-
+    <View style={styles.screen}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps='handled'>
-          <Text style={styles.title}>Project basics</Text>
+          style={{ flex: 1 }}
+          contentContainerStyle={[
+            styles.content,
+            { paddingTop: insets.top + 20 },
+          ]}
+          keyboardShouldPersistTaps='handled'
+          showsVerticalScrollIndicator={false}>
+          <WizardHeader step={1} title='Project basics' />
 
-          {/* Project Name */}
-          <View style={styles.card}>
-            <Text style={styles.label}>Project Name</Text>
+          <Field label='Project name'>
             <TextInput
-              value={projectName}
-              onChangeText={setProjectName}
-              style={styles.inputBig}
+              value={name}
+              onChangeText={setName}
+              style={styles.nameInput}
               placeholder='Enter a name'
-              placeholderTextColor='#999'
+              placeholderTextColor={color.neutral[600]}
             />
-          </View>
+          </Field>
 
-          {/* Tags */}
-          <View style={styles.card}>
-            <View style={styles.tagsTopRow}>
-              <Text style={styles.label}>Tags</Text>
-              <Text style={styles.hashIcon}>#</Text>
-              <View style={{ flex: 1 }} />
-              <Text style={styles.tagsPlaceholder}>Add tags</Text>
-              <View style={{ flex: 1 }} />
-            </View>
-
-            <View style={styles.divider} />
-
-            <View style={styles.tagsRow}>
-              {tags.map((t) => (
-                <View key={t} style={styles.chip}>
-                  <Text style={styles.chipText}>{t}</Text>
+          <Field label='Tags'>
+            {tags.length > 0 && (
+              <View style={styles.tagRow}>
+                {tags.map((t) => (
                   <Pressable
-                    onPress={() => removeTag(t)}
-                    hitSlop={10}
-                    accessibilityRole='button'
-                    accessibilityLabel={`Remove tag ${t}`}>
-                    <Text style={styles.chipX}>×</Text>
+                    key={t}
+                    onPress={() => setTags((p) => p.filter((x) => x !== t))}
+                    style={styles.tagChip}>
+                    <Text style={styles.tagChipText}>{t}</Text>
+                    <X size={13} strokeWidth={3} color={color.acc2[800]} />
                   </Pressable>
-                </View>
-              ))}
-            </View>
-
-            {/* hidden-ish input (you can switch to a proper tag editor later) */}
+                ))}
+              </View>
+            )}
             <TextInput
               value={tagDraft}
               onChangeText={setTagDraft}
               onSubmitEditing={addTag}
-              style={styles.tagDraftInput}
+              style={styles.tagInput}
               placeholder='Type a tag and press enter'
-              placeholderTextColor='#AAA'
+              placeholderTextColor={color.neutral[600]}
               returnKeyType='done'
             />
-          </View>
+          </Field>
 
-          {/* Pattern */}
-          <View style={styles.card}>
-            <View style={styles.patternHeader}>
-              <View>
-                <Text style={styles.label}>Pattern</Text>
-                <Text style={styles.caption}>(max 500kb)</Text>
+          <Field label='Pattern file'>
+            <View style={styles.patternTop}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.patternHint}>PDF or photo, max 500 kb</Text>
               </View>
-
               <Pressable
-                onPress={() => {
-                  // TODO: hook up document picker
-                  // e.g. expo-document-picker or react-native-document-picker
-                }}
-                hitSlop={10}
-                style={styles.uploadButton}
-                accessibilityRole='button'
+                style={styles.uploadBtn}
                 accessibilityLabel='Upload pattern'>
-                <Text style={styles.uploadIcon}>⤴︎</Text>
+                <Upload size={20} strokeWidth={2.75} color={color.acc[800]} />
               </Pressable>
             </View>
-
-            <Text style={[styles.label, { marginTop: 12 }]}>Pattern Link</Text>
+            <View style={styles.divider} />
+            <Text style={styles.subKicker}>Or paste a link</Text>
             <TextInput
               value={patternLink}
               onChangeText={setPatternLink}
-              style={styles.inputBig}
-              placeholder='https://...'
-              placeholderTextColor='#999'
+              style={fieldStyles.input}
+              placeholder='https://…'
+              placeholderTextColor={color.neutral[600]}
               autoCapitalize='none'
               keyboardType='url'
             />
-          </View>
-
-          <View style={{ height: 28 }} />
-
-          {/* Buttons */}
-          <View style={styles.buttonsRow}>
-            <Pressable
-              onPress={onBack}
-              style={[styles.btn, styles.btnGhost]}
-              accessibilityRole='button'>
-              <Text style={styles.btnGhostText}>Back</Text>
-            </Pressable>
-
-            <Pressable
-              onPress={canContinue ? onContinue : undefined}
-              style={[
-                styles.btn,
-                styles.btnPrimary,
-                !canContinue && { opacity: 0.4 },
-              ]}
-              accessibilityRole='button'>
-              <Text style={styles.btnPrimaryText}>Continue</Text>
-            </Pressable>
-          </View>
+          </Field>
         </ScrollView>
+
+        <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
+          <WizardFooter
+            onBack={() => router.back()}
+            onNext={onContinue}
+            nextLabel='Continue'
+            nextDisabled={!canContinue}
+          />
+        </View>
       </KeyboardAvoidingView>
     </View>
   );
 }
 
-const CARD_RADIUS = 18;
-
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: '#FFF',
+  screen: { flex: 1, backgroundColor: color.bg },
+  content: { paddingHorizontal: 22, paddingBottom: 24 },
+  footer: {
     paddingHorizontal: 22,
+    paddingTop: 4,
+    backgroundColor: color.bg,
   },
-  content: {
-    paddingTop: 24,
-    paddingBottom: 24,
-  },
-  title: {
-    textAlign: 'center',
-    marginBottom: 24,
+  nameInput: {
+    fontFamily: font.heading,
     fontSize: 20,
-    fontWeight: '700',
-    fontFamily: Platform.select({
-      ios: 'Georgia',
-      android: 'serif',
-      //   default: 'Fraunces',
-    }),
-    // fontFamily: 'Fraunces_700Bold',
-    color: '#111',
+    color: color.text,
+    paddingVertical: 2,
   },
-  card: {
-    borderWidth: 1,
-    borderColor: '#E6E6E6',
-    borderRadius: CARD_RADIUS,
-    padding: 16,
-    marginBottom: 14,
-    backgroundColor: '#FFF',
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#1A1A1A',
-    marginBottom: 6,
-  },
-  caption: {
-    fontSize: 11,
-    color: '#777',
-    marginTop: 2,
-  },
-  inputBig: {
-    fontSize: 16,
-    color: '#111',
-    paddingVertical: 6,
-  },
-
-  tagsTopRow: {
+  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  tagChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 7,
+    paddingLeft: 13,
+    paddingRight: 9,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+    backgroundColor: color.acc2[100],
   },
-  hashIcon: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#222',
-    marginLeft: 4,
+  tagChipText: {
+    fontFamily: font.bodySemi,
+    fontSize: 12.5,
+    color: color.acc2[800],
   },
-  tagsPlaceholder: {
-    fontSize: 16,
-    color: '#777',
+  tagInput: {
+    fontFamily: font.body,
+    fontSize: 13.5,
+    color: color.text,
+    paddingVertical: 4,
+  },
+  patternTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  patternHint: {
+    fontFamily: font.body,
+    fontSize: 12,
+    color: color.neutral[700],
+  },
+  uploadBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.pill,
+    backgroundColor: color.acc[100],
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   divider: {
     height: 1,
-    backgroundColor: '#EFEFEF',
-    marginTop: 12,
-    marginBottom: 10,
+    backgroundColor: color.divider,
+    marginVertical: 14,
   },
-  tagsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#E6E6E6',
-    backgroundColor: '#FAFAFA',
-    gap: 8,
-  },
-  chipText: { fontSize: 12, color: '#222' },
-  chipX: { fontSize: 16, color: '#666', marginTop: -1 },
-
-  tagDraftInput: {
-    marginTop: 12,
-    fontSize: 12,
-    color: '#333',
-    paddingVertical: 6,
-  },
-
-  patternHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-  },
-  uploadButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 2,
-  },
-  uploadIcon: {
-    fontSize: 20,
-    color: '#1A1A1A',
-  },
-
-  buttonsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 14,
-    paddingTop: 6,
-  },
-  btn: {
-    flex: 1,
-    height: 54,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnGhost: {
-    borderWidth: 1,
-    borderColor: '#E6E6E6',
-    backgroundColor: '#FFF',
-  },
-  btnGhostText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111',
-  },
-  btnPrimary: {
-    backgroundColor: '#53721F',
-  },
-  btnPrimaryText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFF',
+  subKicker: {
+    fontFamily: font.bodySemi,
+    fontSize: 11,
+    letterSpacing: 0.3,
+    color: color.acc[700],
+    marginBottom: 4,
   },
 });
