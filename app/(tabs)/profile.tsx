@@ -14,7 +14,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, font, radius } from '@src/theme/theme';
 import { usePrefs } from '@src/store/prefs';
 import { listProjects } from '@src/db/projectsRepo';
-import { getProjectTotalSeconds, getGlobalStreakDays } from '@src/db/sessionsRepo';
+import {
+  getProjectTotalSeconds,
+  getGlobalStreakDays,
+} from '@src/db/sessionsRepo';
 import { useProgress, projectPercent } from '@src/store/progress';
 
 const TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -84,17 +87,17 @@ export default function ProfileScreen() {
       const projects = listProjects();
       const seconds = projects.reduce(
         (n, p) => n + getProjectTotalSeconds(p.id),
-        0
+        0,
       );
       const finished = projects.filter(
-        (p) => projectPercent(counters, p.id) >= 1
+        (p) => projectPercent(counters, p.id) >= 1,
       ).length;
       setStats({
         finished,
         hours: Math.round(seconds / 3600),
         streak: getGlobalStreakDays(TZ),
       });
-    }, [counters])
+    }, [counters]),
   );
 
   const initial = (name?.trim()?.[0] ?? '·').toUpperCase();
@@ -115,13 +118,21 @@ export default function ProfileScreen() {
             <Text style={styles.name} numberOfLines={1}>
               {name || 'You'}
             </Text>
-            <Text style={styles.tagline}>Knitting since 2019 · Leipzig</Text>
+            <Text style={styles.tagline}>Knitting since 2019 · Romania</Text>
           </View>
         </View>
 
         <View style={styles.statRow}>
-          <StatTile value={String(stats.finished)} label='finished' tint='sage' />
-          <StatTile value={`${stats.hours}h`} label='on the needles' tint='sage' />
+          <StatTile
+            value={String(stats.finished)}
+            label='finished'
+            tint='sage'
+          />
+          <StatTile
+            value={`${stats.hours}h`}
+            label='on the needles'
+            tint='sage'
+          />
           <StatTile
             value={String(stats.streak)}
             label='day streak'

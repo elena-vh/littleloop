@@ -1,6 +1,3 @@
-// Derived pattern data. Nothing here is stored — everything is a pure function
-// of the current row and the counter total.
-
 export const REPEAT_LEN = 8;
 
 export function instructionFor(n: number): string {
@@ -21,7 +18,6 @@ export function repeatInfo(row: number, total: number) {
   return { repeatsTotal, repeatIdx, withinRepeat };
 }
 
-// The rows shown around the current one in the pattern viewer.
 export function surroundingRows(row: number, total: number) {
   return [row - 2, row - 1, row, row + 1]
     .filter((n) => n >= 1 && n <= total)

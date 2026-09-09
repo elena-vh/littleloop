@@ -68,7 +68,6 @@ export default function CounterScreen() {
   const row = stored?.current ?? 0;
   const unit = UNIT[counterName];
 
-  // make sure the counter exists with a sane total
   useEffect(() => {
     if (!stored || stored.total <= 0) {
       setCounter(projectId, counterName, {
@@ -78,7 +77,6 @@ export default function CounterScreen() {
     }
   }, [projectId, counterName]);
 
-  // ---- derived, never stored ----
   const pct = total > 0 ? Math.min(1, row / total) : 0;
   const { repeatsTotal, repeatIdx, withinRepeat } = repeatInfo(row, total);
   const repeatPct = withinRepeat ? withinRepeat / REPEAT_LEN : 0;
@@ -88,7 +86,6 @@ export default function CounterScreen() {
   const inc = () => bump(projectId, counterName, 1);
   const dec = () => bump(projectId, counterName, -1);
 
-  // ---- timer / session ----
   const [running, setRunning] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const sessionRef = useRef<{ id: string; startedAt: number } | null>(null);
@@ -123,7 +120,6 @@ export default function CounterScreen() {
     }
   };
 
-  // finish a running session when leaving the screen
   useEffect(() => () => stopSession(), [stopSession]);
 
   const isBody = counterName === 'body';

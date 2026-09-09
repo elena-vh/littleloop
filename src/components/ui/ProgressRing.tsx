@@ -4,18 +4,14 @@ import Svg, { Circle } from 'react-native-svg';
 import { color, font } from '@src/theme/theme';
 
 type Props = {
-  /** 0..1 */
   progress: number;
   size?: number;
   stroke?: number;
   trackColor?: string;
   fillColor?: string;
-  /** centre content — usually the percent label */
   children?: React.ReactNode;
 };
 
-// A rotated -90° progress ring with a round cap. Used at 74px on Home, 64px on
-// the overview tiles, 248px on the round counter — same component, same maths.
 export default function ProgressRing({
   progress,
   size = 74,

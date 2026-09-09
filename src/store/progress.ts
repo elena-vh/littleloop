@@ -2,13 +2,8 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Shared source of truth for row counters. The round-counter screen writes here;
-// the project-detail slider and the Home ring read from here — one value, never
-// duplicated. Repeat position / percent / ring offset are derived, never stored.
-
 export type Counter = { current: number; total: number };
 
-// The counter that represents overall project progress (drives % everywhere).
 export const PRIMARY_COUNTER = 'body';
 
 type CounterMap = Record<string, Record<string, Counter>>;
@@ -64,7 +59,6 @@ export const useProgress = create<ProgressState>()(
   )
 );
 
-/** Overall project completion, 0..1, from the primary counter. */
 export function projectPercent(
   counters: CounterMap,
   projectId: string

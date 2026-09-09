@@ -8,12 +8,7 @@ import {
   Alert,
   Image,
 } from 'react-native';
-import {
-  ChevronLeft,
-  MoreVertical,
-  Plus,
-  FileText,
-} from 'lucide-react-native';
+import { ChevronLeft, MoreVertical, Plus, FileText } from 'lucide-react-native';
 import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
@@ -101,8 +96,6 @@ export default function ProjectDetailScreen() {
       today: getProjectSecondsToday(p.id, TZ),
       week: getProjectSecondsThisWeek(p.id, TZ),
     });
-    // Seed the primary counter's total from the project target so the counter
-    // screen has something real to count towards.
     const target = parseTarget(p.targetMeasurement);
     const existing = counters[p.id]?.[PRIMARY_COUNTER];
     if (target > 0 && (!existing || existing.total !== target)) {
@@ -113,7 +106,7 @@ export default function ProjectDetailScreen() {
   useFocusEffect(
     useCallback(() => {
       load();
-    }, [load])
+    }, [load]),
   );
 
   const handleDelete = () => {
@@ -143,19 +136,17 @@ export default function ProjectDetailScreen() {
   const status: Status = !project?.startDate
     ? 'Planned'
     : pct >= 1
-    ? 'Done'
-    : 'In progress';
+      ? 'Done'
+      : 'In progress';
   const STATUS_TINT: Record<Status, string> = {
-    Planned: color.neutral[400],
+    'Planned': color.neutral[400],
     'In progress': color.acc2[600],
-    Done: color.acc2[700],
+    'Done': color.acc2[700],
   };
 
-  const projectCounters = project ? counters[project.id] ?? {} : {};
+  const projectCounters = project ? (counters[project.id] ?? {}) : {};
   const counterNames = Object.keys(projectCounters);
-  const shownCounters = counterNames.length
-    ? counterNames
-    : [PRIMARY_COUNTER];
+  const shownCounters = counterNames.length ? counterNames : [PRIMARY_COUNTER];
 
   const openCounter = (name: string) =>
     project &&
@@ -178,7 +169,6 @@ export default function ProjectDetailScreen() {
           styles.content,
           { paddingTop: 56, paddingBottom: 28 + insets.bottom },
         ]}>
-        {/* header */}
         <View style={styles.header}>
           <Pressable
             onPress={() => router.back()}
@@ -197,11 +187,13 @@ export default function ProjectDetailScreen() {
           </Pressable>
         </View>
 
-        {/* status card */}
         <View style={styles.statusCard}>
           <View style={styles.statusRow}>
             <View
-              style={[styles.statusDot, { backgroundColor: STATUS_TINT[status] }]}
+              style={[
+                styles.statusDot,
+                { backgroundColor: STATUS_TINT[status] },
+              ]}
             />
             <Text style={styles.statusText}>{status}</Text>
             {dl != null && (
@@ -241,13 +233,12 @@ export default function ProjectDetailScreen() {
               {primary
                 ? `${primary.current} of ${primary.total} rows`
                 : target > 0
-                ? `0 of ${target} rows`
-                : 'No target set'}
+                  ? `0 of ${target} rows`
+                  : 'No target set'}
             </Text>
           </View>
         </View>
 
-        {/* materials */}
         <Text style={styles.h4}>Materials</Text>
         <View style={styles.grid}>
           <View style={styles.tile}>
@@ -277,7 +268,6 @@ export default function ProjectDetailScreen() {
           </View>
         </View>
 
-        {/* pattern */}
         <View style={styles.sectionHead}>
           <Text style={styles.h4}>Pattern</Text>
           {(project?.patternFile || project?.patternLink) && (
@@ -314,13 +304,12 @@ export default function ProjectDetailScreen() {
               {project?.patternFile
                 ? 'PDF attached'
                 : project?.patternLink
-                ? 'Linked'
-                : 'Add one from project settings'}
+                  ? 'Linked'
+                  : 'Add one from project settings'}
             </Text>
           </View>
         </Pressable>
 
-        {/* crafting time */}
         <Text style={styles.h4}>Crafting time</Text>
         <View style={styles.timeCard}>
           <View style={styles.timeTopRow}>
@@ -330,7 +319,9 @@ export default function ProjectDetailScreen() {
           <View style={styles.timeTiles}>
             <View style={styles.timeTile}>
               <Text style={styles.timeTileLabel}>Today</Text>
-              <Text style={styles.timeTileValue}>{fmtDuration(time.today)}</Text>
+              <Text style={styles.timeTileValue}>
+                {fmtDuration(time.today)}
+              </Text>
             </View>
             <View style={styles.timeTile}>
               <Text style={styles.timeTileLabel}>This week</Text>
@@ -347,7 +338,6 @@ export default function ProjectDetailScreen() {
           </Pressable>
         </View>
 
-        {/* counters */}
         <View style={styles.sectionHead}>
           <Text style={styles.h4}>Counters</Text>
           <Pressable
@@ -375,7 +365,6 @@ export default function ProjectDetailScreen() {
           })}
         </View>
 
-        {/* progress pics */}
         <View style={styles.sectionHead}>
           <Text style={styles.h4}>Progress pics</Text>
           <Pressable

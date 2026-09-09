@@ -8,11 +8,11 @@ export type Yarn = {
   id: string;
   brand: string;
   colorway: string;
-  swatch: string; // hex
-  weight: string; // "aran", "DK", ...
+  swatch: string;
+  weight: string;
   skeins: number;
   dyeLot?: string;
-  boughtAt?: string; // free label, e.g. "Mar 2026"
+  boughtAt?: string;
   fiber?: string;
   yardage?: string;
   needle?: string;
@@ -30,7 +30,6 @@ type YarnState = {
   adjustSkeins: (id: string, delta: number) => void;
 };
 
-// Invented starter stash (matches the design prototype) — seeded once.
 const SEED: Yarn[] = [
   {
     id: 'seed-pin',

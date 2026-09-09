@@ -2,8 +2,6 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { radius } from '@src/theme/theme';
 
-// A yarn colour dot with two rings: a soft cream inset and a fine ink outline —
-// so real yarn colours don't vanish against the sand cards.
 export default function YarnSwatch({
   color: swatch,
   size = 46,

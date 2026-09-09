@@ -2,9 +2,6 @@ import React, { createContext, useContext } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { color, radius, shadow } from './theme';
 
-// The Organic redesign is a single cream theme — no light/dark switching.
-// `useTheme()` stays so existing screens keep compiling while they migrate to
-// importing from '@src/theme/theme' directly.
 const theme = {
   name: 'light' as const,
   colors: {

@@ -10,7 +10,7 @@ import { useProgress, PRIMARY_COUNTER } from '@src/store/progress';
 import { surroundingRows, REPEAT_LEN, repeatInfo } from '@src/lib/pattern';
 import Tag from '@src/components/ui/Tag';
 
-const SIZES = [-1, 0, 1]; // Aa cycle: small / medium / large
+const SIZES = [-1, 0, 1];
 const SIZE_LABEL = ['A', 'Aa', 'AA'];
 
 export default function PatternScreen() {

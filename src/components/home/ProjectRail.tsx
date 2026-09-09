@@ -14,7 +14,6 @@ import { useProgress, projectPercent } from '@src/store/progress';
 
 const CARD_W = 150;
 
-// [block, ink] pairs — flat colour fields, a monogram sits on top.
 const TINTS: [string, string][] = [
   [color.acc2[300], color.acc2[800]],
   [color.acc[200], color.acc[800]],

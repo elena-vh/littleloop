@@ -1,13 +1,9 @@
-// theme.ts — Organic design tokens for Little Loop
-// Source of truth: Organic design system (styles.css). Do not hard-code values
-// elsewhere; import from here so a retune propagates.
-
 export const color = {
-  bg: '#f5ead8', // app ground (cream)
-  surface: '#ebddc5', // cards, inputs, tab-bar rows (sand)
-  text: '#201e1d', // ink
-  accent: '#c67139', // terracotta — primary actions
-  accent2: '#7a8a5e', // sage — progress, time, "good"
+  bg: '#f5ead8',
+  surface: '#ebddc5',
+  text: '#201e1d',
+  accent: '#c67139',
+  accent2: '#7a8a5e',
   divider: 'rgba(32,30,29,0.16)',
 
   neutral: {
@@ -21,7 +17,6 @@ export const color = {
     800: '#474238',
     900: '#2e2b25',
   },
-  // terracotta ramp
   acc: {
     100: '#fff2eb',
     200: '#ffe1d0',
@@ -33,7 +28,6 @@ export const color = {
     800: '#643312',
     900: '#402310',
   },
-  // sage ramp
   acc2: {
     100: '#f0fae1',
     200: '#e1eecc',
@@ -47,24 +41,37 @@ export const color = {
   },
 } as const;
 
-// Fraunces (a "wonky" optical serif) for display; Figtree for body.
 export const font = {
   heading: 'Fraunces_700Bold',
-  headingBlack: 'Fraunces_900Black', // hero / oversized numerals
-  serif: 'Fraunces_400Regular', // quieter serif for meta lines
+  headingBlack: 'Fraunces_900Black',
+  serif: 'Fraunces_400Regular',
   body: 'Figtree_400Regular',
   bodySemi: 'Figtree_600SemiBold',
   bodyBold: 'Figtree_700Bold',
 } as const;
 
-// Real hierarchy, not a smooth ramp — the display sizes are meant to feel big.
 export const type = {
-  hero: { fontFamily: font.headingBlack, fontSize: 40, lineHeight: 42, letterSpacing: -0.5 },
-  screenTitle: { fontFamily: font.heading, fontSize: 32, lineHeight: 35, letterSpacing: -0.4 },
+  hero: {
+    fontFamily: font.headingBlack,
+    fontSize: 40,
+    lineHeight: 42,
+    letterSpacing: -0.5,
+  },
+  screenTitle: {
+    fontFamily: font.heading,
+    fontSize: 32,
+    lineHeight: 35,
+    letterSpacing: -0.4,
+  },
   pageTitle: { fontFamily: font.heading, fontSize: 26, lineHeight: 29 },
   sectionH: { fontFamily: font.heading, fontSize: 17, lineHeight: 20 },
   cardTitle: { fontFamily: font.heading, fontSize: 15, lineHeight: 18 },
-  counterHuge: { fontFamily: font.headingBlack, fontSize: 78, lineHeight: 78, letterSpacing: -1 },
+  counterHuge: {
+    fontFamily: font.headingBlack,
+    fontSize: 78,
+    lineHeight: 78,
+    letterSpacing: -1,
+  },
   statBig: { fontFamily: font.heading, fontSize: 28, lineHeight: 31 },
   body: { fontFamily: font.body, fontSize: 14, lineHeight: 21 },
   bodySm: { fontFamily: font.body, fontSize: 12.5, lineHeight: 18 },
@@ -74,7 +81,6 @@ export const type = {
     lineHeight: 16,
     color: color.neutral[700],
   },
-  // Quiet section label — sentence case, barely tracked. Not a shout.
   kicker: {
     fontFamily: font.bodySemi,
     fontSize: 11,
@@ -83,7 +89,6 @@ export const type = {
   },
 } as const;
 
-// 1.10x scale
 export const space = {
   1: 4.4,
   2: 8.8,
@@ -93,18 +98,16 @@ export const space = {
   8: 35.2,
 } as const;
 
-// Deliberate contrast: photos stay near-square, only controls go fully round.
 export const radius = {
   sm: 6,
   md: 12,
   lg: 18,
-  photo: 8, // images / textured blocks — crisp corners
-  card: 16, // list cards / spec tiles
-  cardLg: 20, // hero + status cards
+  photo: 8,
+  card: 16,
+  cardLg: 20,
   pill: 999,
 } as const;
 
-// Tuned to the cream ground — soft and ink-tinted, never grey/blue.
 export const shadow = {
   sm: {
     shadowColor: '#2e2b25',
@@ -129,5 +132,4 @@ export const shadow = {
   },
 } as const;
 
-// Minimum tap target used throughout
 export const HIT = 44;

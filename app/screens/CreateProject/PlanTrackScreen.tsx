@@ -52,11 +52,10 @@ const fmtDMY = (d: Date) =>
 const fmtMonthYear = (d: Date) =>
   `${d.toLocaleString(undefined, { month: 'long' })} ${d.getFullYear()}`;
 
-// Monday-first month grid
 function buildCells(cursor: Date): Array<Date | null> {
   const y = cursor.getFullYear();
   const m = cursor.getMonth();
-  const lead = (new Date(y, m, 1).getDay() + 6) % 7; // Mon=0
+  const lead = (new Date(y, m, 1).getDay() + 6) % 7;
   const days = new Date(y, m + 1, 0).getDate();
   const cells: Array<Date | null> = [];
   for (let i = 0; i < lead; i++) cells.push(null);

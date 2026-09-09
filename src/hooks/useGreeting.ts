@@ -41,7 +41,6 @@ const msUntilNextBoundary = (now = new Date()) => {
   return tomorrow5.getTime() - now.getTime();
 };
 
-// Two-line form for the Home greeting: "Good morning," / "Elena"
 export const greetingParts = (date = new Date(), name?: string) => {
   const p = periodFromHour(date.getHours());
   const base =

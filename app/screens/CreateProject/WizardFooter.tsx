@@ -51,8 +51,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
-    // integer flex ratio (5 : 7 ≈ 1 : 1.4) — Fabric drops a style object that
-    // carries a fractional `flex`, which was killing the terracotta fill.
     flexBasis: 0,
   },
   back: {
@@ -62,11 +60,11 @@ const styles = StyleSheet.create({
   },
   backPressed: { backgroundColor: 'rgba(32,30,29,0.06)' },
   backText: { fontFamily: font.bodySemi, fontSize: 15, color: color.text },
+  nextText: { fontFamily: font.bodySemi, fontSize: 15, color: color.text },
   next: {
     flexGrow: 7,
     backgroundColor: color.accent,
   },
   nextPressed: { backgroundColor: color.acc[600] },
   nextDisabled: { opacity: 0.4 },
-  nextText: { fontFamily: font.bodySemi, fontSize: 15, color: color.bg },
 });

@@ -242,7 +242,6 @@ export function getProjectStreakDays(
   return streak;
 }
 
-/** Consecutive days (any project) with a logged session, counting back from today. */
 export function getGlobalStreakDays(timeZone: string): number {
   const rows = db.getAllSync<{ ended_at: string }>(
     `SELECT ended_at
